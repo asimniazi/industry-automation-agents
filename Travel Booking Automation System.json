@@ -1,0 +1,1604 @@
+{
+  "name": "Travel Booking Automation System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "travel-booking",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "991b7233-6e56-4941-ab62-c0a5d727e177",
+      "name": "Webhook - Booking Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2496,
+        -160
+      ],
+      "webhookId": "8f7e6d5c-4b3a-2918-7f6e-5d4c3b2a1908"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "ec591f99-dda3-4593-9fa8-28a71f092ffc",
+      "name": "Schedule Trigger - Check Reminders",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2496,
+        160
+      ],
+      "notes": "Runs every hour to check for pending travel reminders"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{ $json.body?.request_id || Date.now().toString() }}",
+              "type": "string"
+            },
+            {
+              "id": "traveler_name",
+              "name": "traveler_name",
+              "value": "={{ $json.body?.traveler_name || 'Guest User' }}",
+              "type": "string"
+            },
+            {
+              "id": "traveler_email",
+              "name": "traveler_email",
+              "value": "={{ $json.body?.traveler_email || 'test@example.com' }}",
+              "type": "string"
+            },
+            {
+              "id": "origin",
+              "name": "origin",
+              "value": "={{ $json.body?.origin || 'NYC' }}",
+              "type": "string"
+            },
+            {
+              "id": "destination",
+              "name": "destination",
+              "value": "={{ $json.body?.destination || 'LON' }}",
+              "type": "string"
+            },
+            {
+              "id": "departure_date",
+              "name": "departure_date",
+              "value": "={{ $json.body?.departure_date || '2025-10-15' }}",
+              "type": "string"
+            },
+            {
+              "id": "return_date",
+              "name": "return_date",
+              "value": "={{ $json.body?.return_date || '2025-10-22' }}",
+              "type": "string"
+            },
+            {
+              "id": "budget",
+              "name": "budget",
+              "value": "={{ $json.body?.budget || 2500 }}",
+              "type": "number"
+            },
+            {
+              "id": "travelers_count",
+              "name": "travelers_count",
+              "value": "={{ $json.body?.travelers_count || 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "accommodation_type",
+              "name": "accommodation_type",
+              "value": "={{ $json.body?.accommodation_type || 'hotel' }}",
+              "type": "string"
+            },
+            {
+              "id": "amadeus_token",
+              "name": "amadeus_token",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "497e5ad0-4aad-403b-b217-06fad70af6e0",
+      "name": "Extract Booking Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2272,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://test.api.amadeus.com/v1/security/oauth2/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "client_id",
+              "value": ""
+            },
+            {
+              "name": "client_secret",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "46fd63da-429e-42c3-81f1-87c835aff07a",
+      "name": "Amadeus OAuth - Get Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2048,
+        -160
+      ],
+      "notes": "Get Amadeus API access token"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "amadeus_token",
+              "name": "amadeus_token",
+              "value": "={{ $('Amadeus OAuth - Get Token').item.json.access_token }}",
+              "type": "string"
+            },
+            {
+              "id": "booking_data",
+              "name": "booking_data",
+              "value": "={{ $('Extract Booking Data').item.json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a655102-43db-4dc5-b0f0-e06b1ff56b10",
+      "name": "Store Token and Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1824,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode={{ $json.booking_data.origin }}&destinationLocationCode={{ $json.booking_data.destination }}&departureDate={{ $json.booking_data.departure_date }}&returnDate={{ $json.booking_data.return_date }}&adults={{ $json.booking_data.travelers_count }}&currencyCode=USD&max=5",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.amadeus_token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b2afb2dc-6ab2-4f72-ae0c-c16be14fdd05",
+      "name": "Amadeus API - Search Flights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1600,
+        -256
+      ],
+      "continueOnFail": true,
+      "notes": "Amadeus Flight Search API"
+    },
+    {
+      "parameters": {
+        "url": "=https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-city?cityCode={{ $json.booking_data.destination }}&radius=5&radiusUnit=KM&hotelSource=ALL",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.amadeus_token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "aa8538b9-ccf1-4c8f-b811-82592ee5be64",
+      "name": "Amadeus API - Search Hotels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1600,
+        -64
+      ],
+      "continueOnFail": true,
+      "notes": "Amadeus Hotel Search API"
+    },
+    {
+      "parameters": {},
+      "id": "a73a1893-40a3-4ad4-a7d7-a1e0610c42db",
+      "name": "Merge API Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1376,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "compiled_itinerary",
+              "name": "compiled_itinerary",
+              "value": "={{\n  {\n    \"booking_id\": \"BK\" + $json.booking_data.request_id,\n    \"traveler\": {\n      \"name\": $json.booking_data.traveler_name,\n      \"email\": $json.booking_data.traveler_email,\n      \"travelers_count\": $json.booking_data.travelers_count\n    },\n    \"trip\": {\n      \"origin\": $json.booking_data.origin,\n      \"destination\": $json.booking_data.destination,\n      \"departure_date\": $json.booking_data.departure_date,\n      \"return_date\": $json.booking_data.return_date\n    },\n    \"outbound_flight\": $json.selected_flight.outbound,\n    \"return_flight\": $json.selected_flight.return,\n    \"accommodation\": $json.selected_hotel,\n    \"nights\": Math.ceil((new Date($json.booking_data.return_date) - new Date($json.booking_data.departure_date)) / (1000 * 60 * 60 * 24)),\n    \"pricing\": {\n      \"total_flight_cost\": $json.selected_flight.price * $json.booking_data.travelers_count,\n      \"accommodation_cost\": $json.selected_hotel.price_per_night * Math.ceil((new Date($json.booking_data.return_date) - new Date($json.booking_data.departure_date)) / (1000 * 60 * 60 * 24)),\n      \"grand_total\": ($json.selected_flight.price * $json.booking_data.travelers_count) + ($json.selected_hotel.price_per_night * Math.ceil((new Date($json.booking_data.return_date) - new Date($json.booking_data.departure_date)) / (1000 * 60 * 60 * 24)))\n    },\n    \"booking_date\": new Date().toISOString(),\n    \"status\": \"Pending Payment\"\n  }\n}}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f45252f5-3dd4-4e1c-bb7b-8be3b075c173",
+      "name": "Set - Compile Itinerary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -928,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "payment_status",
+              "name": "payment_status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "transaction_id",
+              "name": "transaction_id",
+              "value": "={{ \"TXN\" + Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "amount_charged",
+              "name": "amount_charged",
+              "value": "={{ $json.compiled_itinerary.pricing.grand_total }}",
+              "type": "number"
+            },
+            {
+              "id": "confirmed_itinerary",
+              "name": "confirmed_itinerary",
+              "value": "={{ Object.assign({}, $json.compiled_itinerary, { status: 'Confirmed', payment_confirmed: true }) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "644eb59a-b525-418e-ae3f-537eeea4cd95",
+      "name": "Payment Processing Confirmation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Travel Itinerary - {{ $json.confirmed_itinerary.booking_id }}</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body { \n            font-family: 'Segoe UI', Arial, sans-serif; \n            line-height: 1.6;\n            color: #333;\n            background: #f5f5f5;\n        }\n        .container {\n            max-width: 800px;\n            margin: 0 auto;\n            background: white;\n            box-shadow: 0 0 20px rgba(0,0,0,0.1);\n        }\n        .header { \n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white; \n            padding: 40px; \n            text-align: center;\n        }\n        .header h1 { font-size: 32px; margin-bottom: 10px; }\n        .booking-ref { \n            background: rgba(255,255,255,0.2); \n            display: inline-block; \n            padding: 8px 20px; \n            border-radius: 20px;\n            margin-top: 10px;\n        }\n        .content { padding: 40px; }\n        .section { \n            margin-bottom: 30px;\n            padding: 25px;\n            background: #f9f9f9;\n            border-radius: 10px;\n            border-left: 4px solid #667eea;\n        }\n        .section h2 { \n            color: #667eea;\n            margin-bottom: 20px;\n            font-size: 24px;\n        }\n        .info-grid {\n            display: grid;\n            grid-template-columns: 1fr 2fr;\n            gap: 15px;\n        }\n        .info-label {\n            font-weight: 600;\n            color: #666;\n        }\n        .flight-card, .hotel-card {\n            background: white;\n            padding: 20px;\n            border-radius: 8px;\n            margin: 15px 0;\n            box-shadow: 0 2px 5px rgba(0,0,0,0.1);\n        }\n        .flight-header {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            margin-bottom: 15px;\n            padding-bottom: 15px;\n            border-bottom: 2px solid #f0f0f0;\n        }\n        .flight-number {\n            font-size: 20px;\n            font-weight: bold;\n            color: #667eea;\n        }\n        .price-summary {\n            background: #e8f5e9;\n            padding: 25px;\n            border-radius: 10px;\n            margin-top: 20px;\n        }\n        .price-row {\n            display: flex;\n            justify-content: space-between;\n            margin: 10px 0;\n            padding: 8px 0;\n        }\n        .total-price {\n            font-size: 28px;\n            color: #2e7d32;\n            font-weight: bold;\n            border-top: 2px solid #2e7d32;\n            padding-top: 15px;\n            margin-top: 15px;\n        }\n        .footer {\n            background: #f5f5f5;\n            padding: 30px;\n            text-align: center;\n            color: #666;\n            border-top: 1px solid #ddd;\n        }\n        .important-notice {\n            background: #fff3cd;\n            border-left: 4px solid #ffc107;\n            padding: 15px;\n            margin: 20px 0;\n            border-radius: 5px;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>✈️ Travel Itinerary</h1>\n            <div class=\"booking-ref\">Booking Reference: {{ $json.confirmed_itinerary.booking_id }}</div>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"section\">\n                <h2>👤 Traveler Information</h2>\n                <div class=\"info-grid\">\n                    <div class=\"info-label\">Name:</div>\n                    <div>{{ $json.confirmed_itinerary.traveler.name }}</div>\n                    <div class=\"info-label\">Email:</div>\n                    <div>{{ $json.confirmed_itinerary.traveler.email }}</div>\n                    <div class=\"info-label\">Number of Travelers:</div>\n                    <div>{{ $json.confirmed_itinerary.traveler.travelers_count }}</div>\n                    <div class=\"info-label\">Booking Status:</div>\n                    <div style=\"color: #2e7d32; font-weight: bold;\">✓ {{ $json.confirmed_itinerary.status }}</div>\n                </div>\n            </div>\n            \n            <div class=\"section\">\n                <h2>✈️ Flight Details</h2>\n                \n                <div class=\"flight-card\">\n                    <div class=\"flight-header\">\n                        <div>\n                            <div class=\"flight-number\">{{ $json.confirmed_itinerary.outbound_flight.flight_number }}</div>\n                            <div>Airline: {{ $json.confirmed_itinerary.outbound_flight.airline }}</div>\n                        </div>\n                        <div style=\"text-align: right;\">\n                            <div style=\"font-size: 18px; font-weight: bold;\">Outbound</div>\n                            <div>{{ $json.confirmed_itinerary.trip.departure_date }}</div>\n                        </div>\n                    </div>\n                    <div class=\"info-grid\">\n                        <div class=\"info-label\">Route:</div>\n                        <div>{{ $json.confirmed_itinerary.trip.origin }} → {{ $json.confirmed_itinerary.trip.destination }}</div>\n                        <div class=\"info-label\">Departure:</div>\n                        <div>{{ $json.confirmed_itinerary.outbound_flight.departure_time }}</div>\n                        <div class=\"info-label\">Arrival:</div>\n                        <div>{{ $json.confirmed_itinerary.outbound_flight.arrival_time }}</div>\n                        <div class=\"info-label\">Duration:</div>\n                        <div>{{ $json.confirmed_itinerary.outbound_flight.duration }}</div>\n                        <div class=\"info-label\">Stops:</div>\n                        <div>{{ $json.confirmed_itinerary.outbound_flight.stops }}</div>\n                    </div>\n                </div>\n                \n                <div class=\"flight-card\">\n                    <div class=\"flight-header\">\n                        <div>\n                            <div class=\"flight-number\">{{ $json.confirmed_itinerary.return_flight.flight_number }}</div>\n                            <div>Airline: {{ $json.confirmed_itinerary.return_flight.airline }}</div>\n                        </div>\n                        <div style=\"text-align: right;\">\n                            <div style=\"font-size: 18px; font-weight: bold;\">Return</div>\n                            <div>{{ $json.confirmed_itinerary.trip.return_date }}</div>\n                        </div>\n                    </div>\n                    <div class=\"info-grid\">\n                        <div class=\"info-label\">Route:</div>\n                        <div>{{ $json.confirmed_itinerary.trip.destination }} → {{ $json.confirmed_itinerary.trip.origin }}</div>\n                        <div class=\"info-label\">Departure:</div>\n                        <div>{{ $json.confirmed_itinerary.return_flight.departure_time }}</div>\n                        <div class=\"info-label\">Arrival:</div>\n                        <div>{{ $json.confirmed_itinerary.return_flight.arrival_time }}</div>\n                        <div class=\"info-label\">Duration:</div>\n                        <div>{{ $json.confirmed_itinerary.return_flight.duration }}</div>\n                        <div class=\"info-label\">Stops:</div>\n                        <div>{{ $json.confirmed_itinerary.return_flight.stops }}</div>\n                    </div>\n                </div>\n            </div>\n            \n            <div class=\"section\">\n                <h2>🏨 Accommodation</h2>\n                <div class=\"hotel-card\">\n                    <div style=\"font-size: 20px; font-weight: bold; color: #667eea; margin-bottom: 15px;\">\n                        {{ $json.confirmed_itinerary.accommodation.name }}\n                    </div>\n                    <div class=\"info-grid\">\n                        <div class=\"info-label\">Hotel ID:</div>\n                        <div>{{ $json.confirmed_itinerary.accommodation.hotel_id }}</div>\n                        <div class=\"info-label\">Address:</div>\n                        <div>{{ $json.confirmed_itinerary.accommodation.address }}</div>\n                        <div class=\"info-label\">Distance from Airport:</div>\n                        <div>{{ $json.confirmed_itinerary.accommodation.distance }}</div>\n                        <div class=\"info-label\">Check-in:</div>\n                        <div>{{ $json.confirmed_itinerary.trip.departure_date }}</div>\n                        <div class=\"info-label\">Check-out:</div>\n                        <div>{{ $json.confirmed_itinerary.trip.return_date }}</div>\n                        <div class=\"info-label\">Nights:</div>\n                        <div>{{ $json.confirmed_itinerary.nights }}</div>\n                        <div class=\"info-label\">Price per Night:</div>\n                        <div>${{ $json.confirmed_itinerary.accommodation.price_per_night }}</div>\n                        <div class=\"info-label\">Rating:</div>\n                        <div>⭐ {{ Number($json.confirmed_itinerary.accommodation.rating).toFixed(1) }}/5</div>\n                    </div>\n                </div>\n            </div>\n            \n            <div class=\"price-summary\">\n                <h2 style=\"color: #2e7d32; margin-bottom: 20px;\">💳 Payment Summary</h2>\n                <div class=\"price-row\">\n                    <span>Flights ({{ $json.confirmed_itinerary.traveler.travelers_count }} travelers):</span>\n                    <span style=\"font-weight: bold;\">${{ Number($json.confirmed_itinerary.pricing.total_flight_cost).toFixed(2) }}</span>\n                </div>\n                <div class=\"price-row\">\n                    <span>Accommodation ({{ $json.confirmed_itinerary.nights }} nights):</span>\n                    <span style=\"font-weight: bold;\">${{ Number($json.confirmed_itinerary.pricing.accommodation_cost).toFixed(2) }}</span>\n                </div>\n                <div class=\"price-row total-price\">\n                    <span>Total Amount:</span>\n                    <span>${{ Number($json.confirmed_itinerary.pricing.grand_total).toFixed(2) }}</span>\n                </div>\n                <div style=\"text-align: center; margin-top: 20px; padding: 15px; background: #c8e6c9; border-radius: 5px;\">\n                    ✅ Payment Confirmed - Transaction ID: {{ $json.transaction_id }}\n                </div>\n            </div>\n            \n            <div class=\"important-notice\">\n                <strong>⏰ Important Reminder:</strong> You will receive an email reminder 24 hours before your departure with check-in information and travel tips.\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <p><strong>Travel Tips:</strong></p>\n            <p>• Arrive at airport 3 hours early for international flights</p>\n            <p>• Ensure passport is valid for at least 6 months from travel date</p>\n            <p>• Check baggage allowances with airline</p>\n            <hr style=\"margin: 20px 0; border: none; border-top: 1px solid #ddd;\">\n            <p>Need assistance? Contact us at support@travelbooking.com | +1-800-TRAVEL</p>\n            <p style=\"margin-top: 10px; font-size: 12px;\">Generated on {{ new Date().toLocaleString() }}</p>\n        </div>\n    </div>\n</body>\n</html>"
+      },
+      "id": "ee02f888-2385-4723-ae82-8bc1d5c6f2eb",
+      "name": "Generate HTML Itinerary",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.traveler.email }}",
+        "subject": "=✈️ Booking Confirmed - {{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.booking_id }}",
+        "message": "={{ $('Generate HTML Itinerary').item.json.html }}",
+        "options": {}
+      },
+      "id": "b3705d8e-3ca8-41d7-9f6e-5a2c1a89f918",
+      "name": "Gmail - Send Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        -256
+      ],
+      "webhookId": "53cde309-3dc8-4c0f-805f-951751c38888",
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "Booking_ID",
+              "name": "Booking_ID",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.booking_id }}",
+              "type": "string"
+            },
+            {
+              "id": "Traveler_Name",
+              "name": "Traveler_Name",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.traveler.name }}",
+              "type": "string"
+            },
+            {
+              "id": "Email",
+              "name": "Email",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.traveler.email }}",
+              "type": "string"
+            },
+            {
+              "id": "Origin",
+              "name": "Origin",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.origin }}",
+              "type": "string"
+            },
+            {
+              "id": "Destination",
+              "name": "Destination",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.destination }}",
+              "type": "string"
+            },
+            {
+              "id": "Departure_Date",
+              "name": "Departure_Date",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.departure_date }}",
+              "type": "string"
+            },
+            {
+              "id": "Return_Date",
+              "name": "Return_Date",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.return_date }}",
+              "type": "string"
+            },
+            {
+              "id": "Outbound_Flight",
+              "name": "Outbound_Flight",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.outbound_flight.flight_number }}",
+              "type": "string"
+            },
+            {
+              "id": "Return_Flight",
+              "name": "Return_Flight",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.return_flight.flight_number }}",
+              "type": "string"
+            },
+            {
+              "id": "Hotel_Name",
+              "name": "Hotel_Name",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.accommodation.name }}",
+              "type": "string"
+            },
+            {
+              "id": "Total_Cost",
+              "name": "Total_Cost",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.pricing.grand_total }}",
+              "type": "number"
+            },
+            {
+              "id": "Payment_Status",
+              "name": "Payment_Status",
+              "value": "={{ $('Payment Processing Confirmation').item.json.payment_status }}",
+              "type": "string"
+            },
+            {
+              "id": "Transaction_ID",
+              "name": "Transaction_ID",
+              "value": "={{ $('Payment Processing Confirmation').item.json.transaction_id }}",
+              "type": "string"
+            },
+            {
+              "id": "Booking_Date",
+              "name": "Booking_Date",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.booking_date }}",
+              "type": "string"
+            },
+            {
+              "id": "Status",
+              "name": "Status",
+              "value": "Confirmed",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0f92f18-8fe4-4660-9960-ca049f4130fe",
+      "name": "Prepare Booking Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1r6rn4xuZgwblqMLrA36EB9YQ7nH_QkzX8O9U1pzkklw",
+          "mode": "list",
+          "cachedResultName": "Bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r6rn4xuZgwblqMLrA36EB9YQ7nH_QkzX8O9U1pzkklw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r6rn4xuZgwblqMLrA36EB9YQ7nH_QkzX8O9U1pzkklw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Booking_ID",
+              "displayName": "Booking_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Traveler_Name",
+              "displayName": "Traveler_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Origin",
+              "displayName": "Origin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Destination",
+              "displayName": "Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Departure_Date",
+              "displayName": "Departure_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Return_Date",
+              "displayName": "Return_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outbound_Flight",
+              "displayName": "Outbound_Flight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Return_Flight",
+              "displayName": "Return_Flight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hotel_Name",
+              "displayName": "Hotel_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total_Cost",
+              "displayName": "Total_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment_Status",
+              "displayName": "Payment_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transaction_ID",
+              "displayName": "Transaction_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booking_Date",
+              "displayName": "Booking_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8bc9be87-e5a3-43f7-bf46-6ae7dee27801",
+      "name": "Save to Bookings Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -32,
+        -64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "Booking_ID",
+              "name": "Booking_ID",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.booking_id }}",
+              "type": "string"
+            },
+            {
+              "id": "Email",
+              "name": "Email",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.traveler.email }}",
+              "type": "string"
+            },
+            {
+              "id": "Name",
+              "name": "Name",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.traveler.name }}",
+              "type": "string"
+            },
+            {
+              "id": "Reminder_Time",
+              "name": "Reminder_Time",
+              "value": "={{ new Date(new Date($('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.departure_date + 'T10:00:00Z').getTime() - 24*60*60*1000).toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "Departure_Date",
+              "name": "Departure_Date",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.trip.departure_date }}",
+              "type": "string"
+            },
+            {
+              "id": "Flight_Number",
+              "name": "Flight_Number",
+              "value": "={{ $('Payment Processing Confirmation').item.json.confirmed_itinerary.outbound_flight.flight_number }}",
+              "type": "string"
+            },
+            {
+              "id": "Status",
+              "name": "Status",
+              "value": "Pending",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "753e2eeb-e6ff-474f-9b80-a78fc9837d6b",
+      "name": "Schedule Reminder Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk",
+          "mode": "list",
+          "cachedResultName": "Reminders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Booking_ID",
+              "displayName": "Booking_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder_Time",
+              "displayName": "Reminder_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Departure_Date",
+              "displayName": "Departure_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Flight_Number",
+              "displayName": "Flight_Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "89c17248-6b16-445c-8566-cc432bf66c73",
+      "name": "Save Reminder to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        416,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk",
+          "mode": "list",
+          "cachedResultName": "Reminders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "8e763b9b-60cd-4529-97e7-5d21c26c8a51",
+      "name": "Read Reminders Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2272,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.Reminder_Time }}",
+              "rightValue": "={{ $now.toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              },
+              "id": "525bea06-9deb-4d7f-bd38-88c0bf23b11c"
+            },
+            {
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Pending",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "48804d79-4036-42fb-9cbe-b99d4e46e714"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3d53ffe9-4761-4815-ae5a-e071ed5c48f8",
+      "name": "Filter Due Reminders",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        -2048,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=⏰ Flight Tomorrow - {{ $json.Booking_ID }}",
+        "message": "=<h2>⏰ Travel Reminder - Your Flight is Tomorrow!</h2>\n<p>Dear {{ $json.Name }},</p>\n<p>This is a reminder that your flight <strong>{{ $json.Flight_Number }}</strong> departs tomorrow on <strong>{{ $json.Departure_Date }}</strong>.</p>\n<h3>Pre-Flight Checklist:</h3>\n<ul>\n<li>✓ Complete online check-in</li>\n<li>✓ Print or download boarding passes</li>\n<li>✓ Check baggage weight limits</li>\n<li>✓ Verify passport/ID validity</li>\n<li>✓ Arrive at airport 2-3 hours early</li>\n<li>✓ Arrange airport transportation</li>\n</ul>\n<p>Safe travels!</p>",
+        "options": {}
+      },
+      "id": "32ddd30c-2499-4555-ace2-95ae4f9adb4e",
+      "name": "Gmail - Send Reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1824,
+        160
+      ],
+      "webhookId": "498cbcfe-783c-4dc3-8903-cca116e4bc37",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "row_number",
+              "name": "row_number",
+              "value": "={{ $itemIndex + 2 }}",
+              "type": "number"
+            },
+            {
+              "id": "booking_id",
+              "name": "Booking_ID",
+              "value": "={{ $('Filter Due Reminders').item.json.Booking_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "284468d1-a54d-4eb2-9c6f-e593079b162a",
+              "name": "Status",
+              "value": "Scheduled",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "621a1010-c33b-44d5-b58c-076211e67767",
+      "name": "Prepare Status Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1600,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk",
+          "mode": "list",
+          "cachedResultName": "Reminders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12njdbcXaCITlZJkGJeu2ZV4OcncV7XWUbLM9w-SQYzk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Booking_ID"
+          ],
+          "schema": [
+            {
+              "id": "Booking_ID",
+              "displayName": "Booking_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder_Time",
+              "displayName": "Reminder_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Departure_Date",
+              "displayName": "Departure_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Flight_Number",
+              "displayName": "Flight_Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f0e9c193-1cb2-4f3e-88e0-c319eb46ec85",
+      "name": "Update Reminder Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1376,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get inputs from both API calls\nconst items = $input.all();\n\n// Initialize variables\nlet flightData = [];\nlet hotelData = [];\nlet bookingData = {};\n\n// Process flight data (first item from merge)\ntry {\n  const flightItem = items[0]?.json;\n  if (flightItem) {\n    // If 'data' field exists and is a string, parse it\n    if (flightItem.data && typeof flightItem.data === 'string') {\n      const parsed = JSON.parse(flightItem.data);\n      flightData = parsed.data || [];\n    } \n    // If already an object with data array\n    else if (flightItem.data && Array.isArray(flightItem.data)) {\n      flightData = flightItem.data;\n    }\n    // Check for booking_data\n    if (flightItem.booking_data) {\n      bookingData = flightItem.booking_data;\n    }\n  }\n} catch (e) {\n  console.log(\"Error processing flight data:\", e);\n}\n\n// Process hotel data (second item from merge)\ntry {\n  const hotelItem = items[1]?.json;\n  if (hotelItem) {\n    // If 'data' field exists and is a string, parse it\n    if (hotelItem.data && typeof hotelItem.data === 'string') {\n      const parsed = JSON.parse(hotelItem.data);\n      hotelData = parsed.data || [];\n    }\n    // If already an object with data array\n    else if (hotelItem.data && Array.isArray(hotelItem.data)) {\n      hotelData = hotelItem.data;\n    }\n  }\n} catch (e) {\n  console.log(\"Error processing hotel data:\", e);\n}\n\n// Set default booking data if not found\nif (!bookingData || Object.keys(bookingData).length === 0) {\n  bookingData = {\n    origin: \"JFK\",\n    destination: \"LHR\",\n    departure_date: \"2025-11-15\",\n    return_date: \"2025-11-22\",\n    travelers_count: 2,\n    traveler_name: \"Guest User\",\n    traveler_email: \"test@example.com\",\n    request_id: Date.now().toString()\n  };\n}\n\n// Process flights - now flightData is properly an array\nlet processedFlights = [];\nif (Array.isArray(flightData) && flightData.length > 0) {\n  processedFlights = flightData.slice(0, 3).map(offer => {\n    try {\n      const outbound = offer.itineraries[0];\n      const returnFlight = offer.itineraries[1];\n      \n      return {\n        outbound: {\n          flight_number: outbound.segments[0].carrierCode + outbound.segments[0].number,\n          airline: outbound.segments[0].carrierCode,\n          departure_time: outbound.segments[0].departure.at,\n          arrival_time: outbound.segments[outbound.segments.length - 1].arrival.at,\n          duration: outbound.duration,\n          stops: outbound.segments.length - 1\n        },\n        return: returnFlight ? {\n          flight_number: returnFlight.segments[0].carrierCode + returnFlight.segments[0].number,\n          airline: returnFlight.segments[0].carrierCode,\n          departure_time: returnFlight.segments[0].departure.at,\n          arrival_time: returnFlight.segments[returnFlight.segments.length - 1].arrival.at,\n          duration: returnFlight.duration,\n          stops: returnFlight.segments.length - 1\n        } : null,\n        price: parseFloat(offer.price.total),\n        currency: offer.price.currency || \"USD\"\n      };\n    } catch (e) {\n      return null;\n    }\n  }).filter(f => f !== null);\n}\n\n// Default flights if none processed\nif (processedFlights.length === 0) {\n  processedFlights = [{\n    outbound: {\n      flight_number: \"AA123\",\n      airline: \"AA\",\n      departure_time: bookingData.departure_date + \"T10:00:00\",\n      arrival_time: bookingData.departure_date + \"T18:00:00\",\n      duration: \"PT8H\",\n      stops: 0\n    },\n    return: {\n      flight_number: \"AA124\",\n      airline: \"AA\",\n      departure_time: bookingData.return_date + \"T14:00:00\",\n      arrival_time: bookingData.return_date + \"T22:00:00\",\n      duration: \"PT8H\",\n      stops: 0\n    },\n    price: 500,\n    currency: \"USD\"\n  }];\n}\n\n// Process hotels - now hotelData is properly an array\nlet processedHotels = [];\nif (Array.isArray(hotelData) && hotelData.length > 0) {\n  processedHotels = hotelData.slice(0, 3).map(hotel => {\n    try {\n      return {\n        hotel_id: hotel.hotelId,\n        name: hotel.name,\n        distance: hotel.distance ? `${hotel.distance.value} ${hotel.distance.unit}` : \"Unknown\",\n        address: hotel.address ? \n          `${hotel.address.lines ? hotel.address.lines.join(\", \") : \"\"}, ${hotel.address.cityName || bookingData.destination}` : \n          bookingData.destination,\n        price_per_night: 100 + Math.floor(Math.random() * 150),\n        rating: 4.0 + (Math.random() * 0.5)\n      };\n    } catch (e) {\n      return null;\n    }\n  }).filter(h => h !== null);\n}\n\n// Default hotel if none processed\nif (processedHotels.length === 0) {\n  processedHotels = [{\n    hotel_id: \"DEFAULT001\",\n    name: \"Grand Hotel\",\n    distance: \"2.5 KM\",\n    address: bookingData.destination,\n    price_per_night: 150,\n    rating: 4.3\n  }];\n}\n\n// Return the final processed data\nreturn {\n  booking_data: bookingData,\n  flight_options: processedFlights,\n  hotel_options: processedHotels,\n  selected_flight: processedFlights[0],\n  selected_hotel: processedHotels[0]\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1152,
+        -160
+      ],
+      "id": "ede460fe-4572-4a0b-b74d-41994fa5c99c",
+      "name": "Process Flights"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        624,
+        -160
+      ],
+      "id": "08542ec6-091b-40a0-a389-60ea482152f8",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Merge API Results": [
+      {
+        "json": {
+          "data": "{\"meta\":{\"count\":5,\"links\":{\"self\":\"https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=JFK&destinationLocationCode=LHR&departureDate=2025-11-15&returnDate=2025-11-22&adults=2&currencyCode=USD&max=5\"}},\"data\":[{\"type\":\"flight-offer\",\"id\":\"1\",\"source\":\"GDS\",\"instantTicketingRequired\":false,\"nonHomogeneous\":false,\"oneWay\":false,\"isUpsellOffer\":false,\"lastTicketingDate\":\"2025-10-08\",\"lastTicketingDateTime\":\"2025-10-08\",\"numberOfBookableSeats\":9,\"itineraries\":[{\"duration\":\"PT16H5M\",\"segments\":[{\"departure\":{\"iataCode\":\"JFK\",\"terminal\":\"7\",\"at\":\"2025-11-15T10:05:00\"},\"arrival\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T11:32:00\"},\"carrierCode\":\"UA\",\"number\":\"6635\",\"aircraft\":{\"code\":\"E75\"},\"operating\":{\"carrierName\":\"AIR CANADA EXPRESS - JAZZ\"},\"duration\":\"PT1H27M\",\"id\":\"1\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T19:15:00\"},\"arrival\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-16T07:10:00\"},\"carrierCode\":\"UA\",\"number\":\"8296\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"AC\"},\"duration\":\"PT6H55M\",\"id\":\"2\",\"numberOfStops\":0,\"blacklistedInEU\":false}]},{\"duration\":\"PT12H45M\",\"segments\":[{\"departure\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-22T08:55:00\"},\"arrival\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T11:50:00\"},\"carrierCode\":\"UA\",\"number\":\"9761\",\"aircraft\":{\"code\":\"32N\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT1H55M\",\"id\":\"9\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T13:15:00\"},\"arrival\":{\"iataCode\":\"JFK\",\"terminal\":\"1\",\"at\":\"2025-11-22T16:40:00\"},\"carrierCode\":\"UA\",\"number\":\"9716\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT9H25M\",\"id\":\"10\",\"numberOfStops\":0,\"blacklistedInEU\":false}]}],\"price\":{\"currency\":\"USD\",\"total\":\"995.66\",\"base\":\"2.00\",\"fees\":[{\"amount\":\"0.00\",\"type\":\"SUPPLIER\"},{\"amount\":\"0.00\",\"type\":\"TICKETING\"}],\"grandTotal\":\"995.66\"},\"pricingOptions\":{\"fareType\":[\"PUBLISHED\"],\"includedCheckedBagsOnly\":false},\"validatingAirlineCodes\":[\"UA\"],\"travelerPricings\":[{\"travelerId\":\"1\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"9\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"10\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]},{\"travelerId\":\"2\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"9\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"10\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]}]},{\"type\":\"flight-offer\",\"id\":\"2\",\"source\":\"GDS\",\"instantTicketingRequired\":false,\"nonHomogeneous\":false,\"oneWay\":false,\"isUpsellOffer\":false,\"lastTicketingDate\":\"2025-10-08\",\"lastTicketingDateTime\":\"2025-10-08\",\"numberOfBookableSeats\":9,\"itineraries\":[{\"duration\":\"PT16H5M\",\"segments\":[{\"departure\":{\"iataCode\":\"JFK\",\"terminal\":\"7\",\"at\":\"2025-11-15T10:05:00\"},\"arrival\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T11:32:00\"},\"carrierCode\":\"UA\",\"number\":\"6635\",\"aircraft\":{\"code\":\"E75\"},\"operating\":{\"carrierName\":\"AIR CANADA EXPRESS - JAZZ\"},\"duration\":\"PT1H27M\",\"id\":\"1\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T19:15:00\"},\"arrival\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-16T07:10:00\"},\"carrierCode\":\"UA\",\"number\":\"8296\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"AC\"},\"duration\":\"PT6H55M\",\"id\":\"2\",\"numberOfStops\":0,\"blacklistedInEU\":false}]},{\"duration\":\"PT28H15M\",\"segments\":[{\"departure\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-22T13:50:00\"},\"arrival\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T16:45:00\"},\"carrierCode\":\"UA\",\"number\":\"9759\",\"aircraft\":{\"code\":\"320\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT1H55M\",\"id\":\"7\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-23T09:50:00\"},\"arrival\":{\"iataCode\":\"JFK\",\"terminal\":\"1\",\"at\":\"2025-11-23T13:05:00\"},\"carrierCode\":\"UA\",\"number\":\"9718\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT9H15M\",\"id\":\"8\",\"numberOfStops\":0,\"blacklistedInEU\":false}]}],\"price\":{\"currency\":\"USD\",\"total\":\"995.66\",\"base\":\"2.00\",\"fees\":[{\"amount\":\"0.00\",\"type\":\"SUPPLIER\"},{\"amount\":\"0.00\",\"type\":\"TICKETING\"}],\"grandTotal\":\"995.66\"},\"pricingOptions\":{\"fareType\":[\"PUBLISHED\"],\"includedCheckedBagsOnly\":false},\"validatingAirlineCodes\":[\"UA\"],\"travelerPricings\":[{\"travelerId\":\"1\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"7\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"8\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]},{\"travelerId\":\"2\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"7\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"8\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]}]},{\"type\":\"flight-offer\",\"id\":\"3\",\"source\":\"GDS\",\"instantTicketingRequired\":false,\"nonHomogeneous\":false,\"oneWay\":false,\"isUpsellOffer\":false,\"lastTicketingDate\":\"2025-10-08\",\"lastTicketingDateTime\":\"2025-10-08\",\"numberOfBookableSeats\":9,\"itineraries\":[{\"duration\":\"PT16H5M\",\"segments\":[{\"departure\":{\"iataCode\":\"JFK\",\"terminal\":\"7\",\"at\":\"2025-11-15T10:05:00\"},\"arrival\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T11:35:00\"},\"carrierCode\":\"AC\",\"number\":\"8899\",\"aircraft\":{\"code\":\"E75\"},\"operating\":{\"carrierName\":\"AIR CANADA EXPRESS - JAZZ\"},\"duration\":\"PT1H30M\",\"id\":\"3\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T19:10:00\"},\"arrival\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-16T07:10:00\"},\"carrierCode\":\"AC\",\"number\":\"864\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"AC\"},\"duration\":\"PT7H\",\"id\":\"4\",\"numberOfStops\":0,\"blacklistedInEU\":false}]},{\"duration\":\"PT12H45M\",\"segments\":[{\"departure\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-22T08:55:00\"},\"arrival\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T11:50:00\"},\"carrierCode\":\"UA\",\"number\":\"9761\",\"aircraft\":{\"code\":\"32N\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT1H55M\",\"id\":\"9\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T13:15:00\"},\"arrival\":{\"iataCode\":\"JFK\",\"terminal\":\"1\",\"at\":\"2025-11-22T16:40:00\"},\"carrierCode\":\"UA\",\"number\":\"9716\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT9H25M\",\"id\":\"10\",\"numberOfStops\":0,\"blacklistedInEU\":false}]}],\"price\":{\"currency\":\"USD\",\"total\":\"995.66\",\"base\":\"2.00\",\"fees\":[{\"amount\":\"0.00\",\"type\":\"SUPPLIER\"},{\"amount\":\"0.00\",\"type\":\"TICKETING\"}],\"grandTotal\":\"995.66\"},\"pricingOptions\":{\"fareType\":[\"PUBLISHED\"],\"includedCheckedBagsOnly\":false},\"validatingAirlineCodes\":[\"AC\"],\"travelerPricings\":[{\"travelerId\":\"1\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"3\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"4\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"9\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"10\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]},{\"travelerId\":\"2\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"3\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"4\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"9\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"10\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]}]},{\"type\":\"flight-offer\",\"id\":\"4\",\"source\":\"GDS\",\"instantTicketingRequired\":false,\"nonHomogeneous\":false,\"oneWay\":false,\"isUpsellOffer\":false,\"lastTicketingDate\":\"2025-10-08\",\"lastTicketingDateTime\":\"2025-10-08\",\"numberOfBookableSeats\":9,\"itineraries\":[{\"duration\":\"PT16H5M\",\"segments\":[{\"departure\":{\"iataCode\":\"JFK\",\"terminal\":\"7\",\"at\":\"2025-11-15T10:05:00\"},\"arrival\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T11:35:00\"},\"carrierCode\":\"AC\",\"number\":\"8899\",\"aircraft\":{\"code\":\"E75\"},\"operating\":{\"carrierName\":\"AIR CANADA EXPRESS - JAZZ\"},\"duration\":\"PT1H30M\",\"id\":\"3\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T19:10:00\"},\"arrival\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-16T07:10:00\"},\"carrierCode\":\"AC\",\"number\":\"864\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"AC\"},\"duration\":\"PT7H\",\"id\":\"4\",\"numberOfStops\":0,\"blacklistedInEU\":false}]},{\"duration\":\"PT28H15M\",\"segments\":[{\"departure\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-22T13:50:00\"},\"arrival\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-22T16:45:00\"},\"carrierCode\":\"UA\",\"number\":\"9759\",\"aircraft\":{\"code\":\"320\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT1H55M\",\"id\":\"7\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"ZRH\",\"at\":\"2025-11-23T09:50:00\"},\"arrival\":{\"iataCode\":\"JFK\",\"terminal\":\"1\",\"at\":\"2025-11-23T13:05:00\"},\"carrierCode\":\"UA\",\"number\":\"9718\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"LX\"},\"duration\":\"PT9H15M\",\"id\":\"8\",\"numberOfStops\":0,\"blacklistedInEU\":false}]}],\"price\":{\"currency\":\"USD\",\"total\":\"995.66\",\"base\":\"2.00\",\"fees\":[{\"amount\":\"0.00\",\"type\":\"SUPPLIER\"},{\"amount\":\"0.00\",\"type\":\"TICKETING\"}],\"grandTotal\":\"995.66\"},\"pricingOptions\":{\"fareType\":[\"PUBLISHED\"],\"includedCheckedBagsOnly\":false},\"validatingAirlineCodes\":[\"AC\"],\"travelerPricings\":[{\"travelerId\":\"1\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"3\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"4\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"7\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"8\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]},{\"travelerId\":\"2\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"497.83\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"3\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"4\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BASIC\",\"brandedFareLabel\":\"BASIC\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"CHECKED BAG SECOND\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"COMPLIMENTARY MEAL\",\"isChargeable\":false,\"amenityType\":\"MEAL\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"BASIC SEAT\",\"isChargeable\":true,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"7\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"8\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]}]},{\"type\":\"flight-offer\",\"id\":\"5\",\"source\":\"GDS\",\"instantTicketingRequired\":false,\"nonHomogeneous\":false,\"oneWay\":false,\"isUpsellOffer\":false,\"lastTicketingDate\":\"2025-10-08\",\"lastTicketingDateTime\":\"2025-10-08\",\"numberOfBookableSeats\":9,\"itineraries\":[{\"duration\":\"PT16H5M\",\"segments\":[{\"departure\":{\"iataCode\":\"JFK\",\"terminal\":\"7\",\"at\":\"2025-11-15T10:05:00\"},\"arrival\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T11:32:00\"},\"carrierCode\":\"UA\",\"number\":\"6635\",\"aircraft\":{\"code\":\"E75\"},\"operating\":{\"carrierName\":\"AIR CANADA EXPRESS - JAZZ\"},\"duration\":\"PT1H27M\",\"id\":\"1\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"YUL\",\"at\":\"2025-11-15T19:15:00\"},\"arrival\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-16T07:10:00\"},\"carrierCode\":\"UA\",\"number\":\"8296\",\"aircraft\":{\"code\":\"333\"},\"operating\":{\"carrierCode\":\"AC\"},\"duration\":\"PT6H55M\",\"id\":\"2\",\"numberOfStops\":0,\"blacklistedInEU\":false}]},{\"duration\":\"PT13H\",\"segments\":[{\"departure\":{\"iataCode\":\"LHR\",\"terminal\":\"2\",\"at\":\"2025-11-22T07:40:00\"},\"arrival\":{\"iataCode\":\"MUC\",\"terminal\":\"2\",\"at\":\"2025-11-22T10:30:00\"},\"carrierCode\":\"UA\",\"number\":\"8884\",\"aircraft\":{\"code\":\"32N\"},\"operating\":{\"carrierCode\":\"CL\"},\"duration\":\"PT1H50M\",\"id\":\"5\",\"numberOfStops\":0,\"blacklistedInEU\":false},{\"departure\":{\"iataCode\":\"MUC\",\"terminal\":\"2\",\"at\":\"2025-11-22T12:50:00\"},\"arrival\":{\"iataCode\":\"JFK\",\"terminal\":\"1\",\"at\":\"2025-11-22T15:40:00\"},\"carrierCode\":\"UA\",\"number\":\"8871\",\"aircraft\":{\"code\":\"359\"},\"operating\":{\"carrierCode\":\"LH\"},\"duration\":\"PT8H50M\",\"id\":\"6\",\"numberOfStops\":0,\"blacklistedInEU\":false}]}],\"price\":{\"currency\":\"USD\",\"total\":\"1002.66\",\"base\":\"2.00\",\"fees\":[{\"amount\":\"0.00\",\"type\":\"SUPPLIER\"},{\"amount\":\"0.00\",\"type\":\"TICKETING\"}],\"grandTotal\":\"1002.66\"},\"pricingOptions\":{\"fareType\":[\"PUBLISHED\"],\"includedCheckedBagsOnly\":false},\"validatingAirlineCodes\":[\"UA\"],\"travelerPricings\":[{\"travelerId\":\"1\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"501.33\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"5\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"6\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]},{\"travelerId\":\"2\",\"fareOption\":\"STANDARD\",\"travelerType\":\"ADULT\",\"price\":{\"currency\":\"USD\",\"total\":\"501.33\",\"base\":\"1.00\"},\"fareDetailsBySegment\":[{\"segmentId\":\"1\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"2\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"5\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]},{\"segmentId\":\"6\",\"cabin\":\"ECONOMY\",\"fareBasis\":\"LL102LGT\",\"brandedFare\":\"BE\",\"brandedFareLabel\":\"BASIC ECONOMY\",\"class\":\"L\",\"includedCheckedBags\":{\"quantity\":0},\"includedCabinBags\":{\"quantity\":1},\"amenities\":[{\"description\":\"CHECKED BAG FIRST\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"SECOND BAG\",\"isChargeable\":true,\"amenityType\":\"BAGGAGE\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRE RESERVED SEAT ASSIGNMENT\",\"isChargeable\":true,\"amenityType\":\"PRE_RESERVED_SEAT\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"PRIORITY BOARDING\",\"isChargeable\":true,\"amenityType\":\"TRAVEL_SERVICES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}},{\"description\":\"MILEAGE ACCRUAL\",\"isChargeable\":false,\"amenityType\":\"BRANDED_FARES\",\"amenityProvider\":{\"name\":\"BrandedFare\"}}]}]}]}],\"dictionaries\":{\"locations\":{\"YUL\":{\"cityCode\":\"YMQ\",\"countryCode\":\"CA\"},\"ZRH\":{\"cityCode\":\"ZRH\",\"countryCode\":\"CH\"},\"LHR\":{\"cityCode\":\"LON\",\"countryCode\":\"GB\"},\"MUC\":{\"cityCode\":\"MUC\",\"countryCode\":\"DE\"},\"JFK\":{\"cityCode\":\"NYC\",\"countryCode\":\"US\"}},\"aircraft\":{\"320\":\"AIRBUS A320\",\"E75\":\"EMBRAER 175\",\"333\":\"AIRBUS A330-300\",\"359\":\"AIRBUS A350-900\",\"32N\":\"AIRBUS A320NEO\"},\"currencies\":{\"USD\":\"US DOLLAR\"},\"carriers\":{\"AC\":\"AIR CANADA\",\"CL\":\"LUFTHANSA CITYLINE\",\"UA\":\"UNITED AIRLINES\",\"LX\":\"SWISS INTERNATIONAL AIR LINES\",\"LH\":\"LUFTHANSA\"}}}"
+        }
+      },
+      {
+        "json": {
+          "data": "{\"data\":[{\"chainCode\":\"PD\",\"iataCode\":\"LHR\",\"dupeId\":700023925,\"name\":\"PARK INN BY RADISSON HEATHROW\",\"hotelId\":\"PDLHR309\",\"geoCode\":{\"latitude\":51.48159,\"longitude\":-0.44982},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB70DU\",\"cityName\":\"LONDON HEATHROW\",\"lines\":[\"BATH ROAD HEATHROW\"]},\"distance\":{\"value\":0.92,\"unit\":\"KM\"},\"masterChainCode\":\"CW\",\"lastUpdate\":\"2025-06-03T10:16:38\"},{\"chainCode\":\"HI\",\"iataCode\":\"LHR\",\"dupeId\":700023934,\"name\":\"HOLIDAY INN HEATHROW M4 JCT 4\",\"hotelId\":\"HILHR1C0\",\"geoCode\":{\"latitude\":51.48504,\"longitude\":-0.45325},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB70JU\",\"cityName\":\"LONDON\",\"lines\":[\"SIPSON ROAD\"]},\"distance\":{\"value\":1.01,\"unit\":\"KM\"},\"masterChainCode\":\"6C\",\"lastUpdate\":\"2025-06-03T10:17:52\"},{\"chainCode\":\"BR\",\"iataCode\":\"LHR\",\"dupeId\":700023935,\"name\":\"RENAISSANCE LONDON HEATHROW\",\"hotelId\":\"BRLHRBRB\",\"geoCode\":{\"latitude\":51.48061,\"longitude\":-0.44691},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW62AQ\",\"cityName\":\"HOUNSLOW\",\"lines\":[\"BATH ROAD\"]},\"distance\":{\"value\":1.06,\"unit\":\"KM\"},\"masterChainCode\":\"EM\",\"lastUpdate\":\"2025-09-22T06:11:53\"},{\"chainCode\":\"PI\",\"iataCode\":\"LHR\",\"dupeId\":700173064,\"name\":\"PREMIER INN HEATHROW AIRPORT\",\"hotelId\":\"PILHRBAN\",\"geoCode\":{\"latitude\":51.4819,\"longitude\":-0.48226},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB70RF\",\"cityName\":\"LONGFORD, WEST DRAYTON\",\"lines\":[\"HEATHROW LONGFORD T5\",\"420 BATH ROAD\"]},\"distance\":{\"value\":1.52,\"unit\":\"KM\"},\"lastUpdate\":\"2025-06-03T10:16:50\"},{\"chainCode\":\"SI\",\"iataCode\":\"LHR\",\"dupeId\":700023926,\"name\":\"SHERATON HEATHROW HOTEL\",\"hotelId\":\"SILHR293\",\"geoCode\":{\"latitude\":51.48356,\"longitude\":-0.48123},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB70HJ\",\"cityName\":\"WEST DRAYTON\",\"lines\":[\"COLBBROOK BYPASS\"]},\"distance\":{\"value\":1.53,\"unit\":\"KM\"},\"masterChainCode\":\"EM\",\"lastUpdate\":\"2025-09-29T06:07:22\"},{\"chainCode\":\"SI\",\"iataCode\":\"LHR\",\"dupeId\":700023927,\"name\":\"SHERATON SKYLINE AT HEATHROW\",\"hotelId\":\"SILHR268\",\"geoCode\":{\"latitude\":51.48105,\"longitude\":-0.4368},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB35BP\",\"cityName\":\"HAYES\",\"lines\":[\"HEATHROW AIRPORT\",\"BATH ROAD\"]},\"distance\":{\"value\":1.74,\"unit\":\"KM\"},\"masterChainCode\":\"EM\",\"lastUpdate\":\"2025-09-22T06:04:22\"},{\"chainCode\":\"SB\",\"iataCode\":\"LHR\",\"dupeId\":700079880,\"name\":\"SOFITEL LONDON HEATHROW\",\"hotelId\":\"SBLHRSOF\",\"geoCode\":{\"latitude\":51.4735,\"longitude\":-0.4915},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW62GD\",\"cityName\":\"LONDON\",\"lines\":[\"TERMINAL 5\",\"LONDON HEATHROW AIRPORT\"]},\"distance\":{\"value\":2.13,\"unit\":\"KM\"},\"masterChainCode\":\"RT\",\"lastUpdate\":\"2025-06-03T10:17:30\",\"retailing\":{\"sponsorship\":{\"isSponsored\":true}}},{\"chainCode\":\"RT\",\"iataCode\":\"LHR\",\"dupeId\":700008064,\"name\":\"IBIS LONDON HEATHROW AIRPORT\",\"hotelId\":\"RTLHRIBI\",\"geoCode\":{\"latitude\":51.48079,\"longitude\":-0.43068},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB35AL\",\"cityName\":\"LONDON\",\"lines\":[\"112 114 BATH ROAD\"]},\"distance\":{\"value\":2.15,\"unit\":\"KM\"},\"masterChainCode\":\"RT\",\"lastUpdate\":\"2025-06-03T10:17:21\"},{\"chainCode\":\"RT\",\"iataCode\":\"LHR\",\"dupeId\":700060541,\"name\":\"NOVOTEL LONDON HEATHROW\",\"hotelId\":\"RTLHRNOV\",\"geoCode\":{\"latitude\":51.49738,\"longitude\":-0.45564},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB79HB\",\"cityName\":\"HEATHROW\",\"lines\":[\"CHERRY LANE WEST DRAYTON MIDDX\"]},\"distance\":{\"value\":2.24,\"unit\":\"KM\"},\"masterChainCode\":\"RT\",\"lastUpdate\":\"2025-06-03T10:17:21\"},{\"chainCode\":\"PI\",\"iataCode\":\"LHR\",\"dupeId\":700162298,\"name\":\"PREMIER INN HEATHROW AIRPORT M4-J4\",\"hotelId\":\"PILHRAQN\",\"geoCode\":{\"latitude\":51.4968,\"longitude\":-0.45074},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB31RW\",\"cityName\":\"LONDON\",\"lines\":[\"SHEPISTON LANE\"]},\"distance\":{\"value\":2.27,\"unit\":\"KM\"},\"lastUpdate\":\"2025-06-03T10:16:51\"},{\"chainCode\":\"PI\",\"iataCode\":\"LHR\",\"dupeId\":700078669,\"name\":\"PREMIER INN HEATHROW\",\"hotelId\":\"PILHRARC\",\"geoCode\":{\"latitude\":51.48014,\"longitude\":-0.42431},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW62AB\",\"cityName\":\"LONDON\",\"lines\":[\"15 BATH ROAD\",\"HOUNSLOW\"]},\"distance\":{\"value\":2.58,\"unit\":\"KM\"},\"lastUpdate\":\"2025-06-03T10:16:50\"},{\"chainCode\":\"YX\",\"iataCode\":\"QQP\",\"dupeId\":700095545,\"name\":\"STANWELL HOTEL NEAR HEATHROW\",\"hotelId\":\"YXQQP833\",\"geoCode\":{\"latitude\":51.45515,\"longitude\":-0.48251},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW197PW\",\"cityName\":\"STAINES\",\"lines\":[\"171 TOWN LANE\"]},\"distance\":{\"value\":2.88,\"unit\":\"KM\"},\"lastUpdate\":\"2025-06-03T10:18:56\"},{\"chainCode\":\"CI\",\"iataCode\":\"LHR\",\"dupeId\":700040418,\"name\":\"COMFORT HOTEL HEATHROW\",\"hotelId\":\"CILHR640\",\"geoCode\":{\"latitude\":51.49466,\"longitude\":-0.42994},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB31LP\",\"cityName\":\"HAYES\",\"lines\":[\"SHEPISTON LANE\"]},\"distance\":{\"value\":2.89,\"unit\":\"KM\"},\"masterChainCode\":\"EC\",\"lastUpdate\":\"2025-06-03T10:16:56\"},{\"chainCode\":\"CP\",\"iataCode\":\"LHR\",\"dupeId\":700023930,\"name\":\"CROWNE PLAZA HEATHROW ARPT\",\"hotelId\":\"CPLHR3E4\",\"geoCode\":{\"latitude\":51.50387,\"longitude\":-0.45114},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB79NA\",\"cityName\":\"WEST DRAYTON LONDON\",\"lines\":[\"STOCKLEY ROAD\"]},\"distance\":{\"value\":3.01,\"unit\":\"KM\"},\"masterChainCode\":\"6C\",\"lastUpdate\":\"2025-10-03T02:57:04\"},{\"chainCode\":\"MC\",\"iataCode\":\"LHR\",\"dupeId\":700023924,\"name\":\"LONDON HEATHROW MARRIOTT\",\"hotelId\":\"MCLHRHRM\",\"geoCode\":{\"latitude\":51.48113,\"longitude\":-0.41684},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"UB35AN\",\"cityName\":\"HARLINGTON HAYES\",\"lines\":[\"BATH ROAD\"]},\"distance\":{\"value\":3.11,\"unit\":\"KM\"},\"masterChainCode\":\"EM\",\"lastUpdate\":\"2025-09-22T06:13:33\"},{\"chainCode\":\"HL\",\"iataCode\":\"LHR\",\"dupeId\":700016234,\"name\":\"DT BY HILTON LONDON HEATHROW\",\"hotelId\":\"HLLHR784\",\"geoCode\":{\"latitude\":51.48024,\"longitude\":-0.41137},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW59QE\",\"cityName\":\"HEATHROW\",\"lines\":[\"745 BATH ROAD\"]},\"distance\":{\"value\":3.47,\"unit\":\"KM\"},\"masterChainCode\":\"EH\",\"lastUpdate\":\"2025-06-03T10:21:31\"},{\"chainCode\":\"TG\",\"iataCode\":\"LHR\",\"dupeId\":700096084,\"name\":\"TRAVELODGE LONDONHEATHROW CENTRAL\",\"hotelId\":\"TGLHR919\",\"geoCode\":{\"latitude\":51.47899,\"longitude\":-0.40876},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"TW59SW\",\"cityName\":\"HOUNSLOW\",\"lines\":[\"HERTZ HOUSE,700 BATH ROAD\"]},\"distance\":{\"value\":3.65,\"unit\":\"KM\"},\"lastUpdate\":\"2025-06-03T10:17:46\"},{\"chainCode\":\"HL\",\"iataCode\":\"LHR\",\"dupeId\":700152278,\"name\":\"HILTON HEATHROW TERM 5\",\"hotelId\":\"HLLHR350\",\"geoCode\":{\"latitude\":51.47679,\"longitude\":-0.5171},\"address\":{\"countryCode\":\"GB\",\"postalCode\":\"SL30FF\",\"cityName\":\"SLOUGH\",\"lines\":[\"POYLE ROAD\",\"COLNBROOK\"]},\"distance\":{\"value\":3.86,\"unit\":\"KM\"},\"masterChainCode\":\"EH\",\"lastUpdate\":\"2025-06-03T10:21:31\"}],\"meta\":{\"count\":18,\"links\":{\"self\":\"https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-city?cityCode=LHR&hotelSource=ALL&radius=5&radiusUnit=KM\"}}}"
+        }
+      }
+    ],
+    "Set - Compile Itinerary": [
+      {
+        "json": {
+          "compiled_itinerary": {
+            "booking_id": "BK1759703481004",
+            "traveler": {
+              "name": "Guest User",
+              "email": "test@example.com",
+              "travelers_count": 2
+            },
+            "trip": {
+              "origin": "JFK",
+              "destination": "LHR",
+              "departure_date": "2025-11-15",
+              "return_date": "2025-11-22"
+            },
+            "outbound_flight": {
+              "flight_number": "UA6635",
+              "airline": "UA",
+              "departure_time": "2025-11-15T10:05:00",
+              "arrival_time": "2025-11-16T07:10:00",
+              "duration": "PT16H5M",
+              "stops": 1
+            },
+            "return_flight": {
+              "flight_number": "UA9761",
+              "airline": "UA",
+              "departure_time": "2025-11-22T08:55:00",
+              "arrival_time": "2025-11-22T16:40:00",
+              "duration": "PT12H45M",
+              "stops": 1
+            },
+            "accommodation": {
+              "hotel_id": "PDLHR309",
+              "name": "PARK INN BY RADISSON HEATHROW",
+              "distance": "0.92 KM",
+              "address": "BATH ROAD HEATHROW, LONDON HEATHROW",
+              "price_per_night": 176,
+              "rating": 4.046135316430449
+            },
+            "nights": 7,
+            "pricing": {
+              "total_flight_cost": 1991.32,
+              "accommodation_cost": 1232,
+              "grand_total": 3223.3199999999997
+            },
+            "booking_date": "2025-10-05T22:31:50.778Z",
+            "status": "Pending Payment"
+          }
+        }
+      }
+    ],
+    "Payment Processing Confirmation": [
+      {
+        "json": {
+          "payment_status": "success",
+          "transaction_id": "TXN1759703517511",
+          "amount_charged": 3223.3199999999997,
+          "confirmed_itinerary": {
+            "booking_id": "BK1759703481004",
+            "traveler": {
+              "name": "Guest User",
+              "email": "test@example.com",
+              "travelers_count": 2
+            },
+            "trip": {
+              "origin": "JFK",
+              "destination": "LHR",
+              "departure_date": "2025-11-15",
+              "return_date": "2025-11-22"
+            },
+            "outbound_flight": {
+              "flight_number": "UA6635",
+              "airline": "UA",
+              "departure_time": "2025-11-15T10:05:00",
+              "arrival_time": "2025-11-16T07:10:00",
+              "duration": "PT16H5M",
+              "stops": 1
+            },
+            "return_flight": {
+              "flight_number": "UA9761",
+              "airline": "UA",
+              "departure_time": "2025-11-22T08:55:00",
+              "arrival_time": "2025-11-22T16:40:00",
+              "duration": "PT12H45M",
+              "stops": 1
+            },
+            "accommodation": {
+              "hotel_id": "PDLHR309",
+              "name": "PARK INN BY RADISSON HEATHROW",
+              "distance": "0.92 KM",
+              "address": "BATH ROAD HEATHROW, LONDON HEATHROW",
+              "price_per_night": 176,
+              "rating": 4.046135316430449
+            },
+            "nights": 7,
+            "pricing": {
+              "total_flight_cost": 1991.32,
+              "accommodation_cost": 1232,
+              "grand_total": 3223.3199999999997
+            },
+            "booking_date": "2025-10-05T22:31:50.778Z",
+            "status": "Confirmed",
+            "payment_confirmed": true
+          }
+        }
+      }
+    ],
+    "Save Reminder to Sheet": [
+      {
+        "json": {
+          "Booking_ID": "BK1759703481004",
+          "Email": "test@example.com",
+          "Name": "Guest User",
+          "Reminder_Time": "2025-11-14T10:00:00.000Z",
+          "Departure_Date": "2025-11-15",
+          "Flight_Number": "UA6635",
+          "Status": "Pending"
+        }
+      }
+    ],
+    "Respond to Webhook": [
+      {
+        "json": {
+          "Booking_ID": "BK1759703481004",
+          "Email": "test@example.com",
+          "Name": "Guest User",
+          "Reminder_Time": "2025-11-14T10:00:00.000Z",
+          "Departure_Date": "2025-11-15",
+          "Flight_Number": "UA6635",
+          "Status": "Pending"
+        }
+      }
+    ],
+    "Schedule Reminder Data": [
+      {
+        "json": {
+          "Booking_ID": "BK1759703481004",
+          "Email": "test@example.com",
+          "Name": "Guest User",
+          "Reminder_Time": "2025-11-14T10:00:00.000Z",
+          "Departure_Date": "2025-11-15",
+          "Flight_Number": "UA6635",
+          "Status": "Pending"
+        }
+      }
+    ],
+    "Save to Bookings Sheet": [
+      {
+        "json": {
+          "Booking_ID": "BK1759703481004",
+          "Traveler_Name": "Guest User",
+          "Email": "test@example.com",
+          "Origin": "JFK",
+          "Destination": "LHR",
+          "Departure_Date": "2025-11-15",
+          "Return_Date": "2025-11-22",
+          "Outbound_Flight": "UA6635",
+          "Return_Flight": "UA9761",
+          "Hotel_Name": "PARK INN BY RADISSON HEATHROW",
+          "Total_Cost": 3223.3199999999997,
+          "Payment_Status": "success",
+          "Transaction_ID": "TXN1759703517511",
+          "Booking_Date": "2025-10-05T22:31:50.778Z",
+          "Status": "Confirmed"
+        }
+      }
+    ],
+    "Read Reminders Sheet": [
+      {
+        "json": {
+          "row_number": 2,
+          "Booking_ID": "BK1734567890123",
+          "Email": "john.smith@email.com",
+          "Name": "John Smith",
+          "Reminder_Time": "2025-08-14T10:30:00Z",
+          "Departure_Date": "2025-10-15",
+          "Flight_Number": "AA4521",
+          "Status": "Pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 3,
+          "Booking_ID": "BK1734567890456",
+          "Email": "sarah.j@email.com",
+          "Name": "Sarah Johnson",
+          "Reminder_Time": "2025-10-19T11:45:00Z",
+          "Departure_Date": "2025-10-20",
+          "Flight_Number": "UA7823",
+          "Status": "Pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 4,
+          "Booking_ID": "BK1734567890789",
+          "Email": "m.brown@email.com",
+          "Name": "Michael Brown",
+          "Reminder_Time": "2025-10-24T14:20:00Z",
+          "Departure_Date": "2025-10-25",
+          "Flight_Number": "DL3456",
+          "Status": "Pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "Booking_ID": "BK1734567891011",
+          "Email": "emma.w@email.com",
+          "Name": "Emma Wilson",
+          "Reminder_Time": "2025-10-31T15:30:00Z",
+          "Departure_Date": "2025-11-01",
+          "Flight_Number": "AA5678",
+          "Status": "Pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "Booking_ID": "BK1734567891213",
+          "Email": "david.lee@email.com",
+          "Name": "David Lee",
+          "Reminder_Time": "2025-11-04T16:45:00Z",
+          "Departure_Date": "2025-11-05",
+          "Flight_Number": "UA8901",
+          "Status": "Pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "Booking_ID": "BK1759703481004",
+          "Email": "test@example.com",
+          "Name": "Guest User",
+          "Reminder_Time": "2025-11-14T10:00:00.000Z",
+          "Departure_Date": "2025-11-15",
+          "Flight_Number": "UA6635",
+          "Status": "Pending"
+        }
+      }
+    ],
+    "Update Reminder Status": [
+      {
+        "json": {
+          "row_number": 2,
+          "Booking_ID": "BK1734567890123",
+          "Status": "Scheduled"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - Booking Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Booking Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Booking Data": {
+      "main": [
+        [
+          {
+            "node": "Amadeus OAuth - Get Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amadeus OAuth - Get Token": {
+      "main": [
+        [
+          {
+            "node": "Store Token and Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Token and Data": {
+      "main": [
+        [
+          {
+            "node": "Amadeus API - Search Flights",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Amadeus API - Search Hotels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amadeus API - Search Flights": {
+      "main": [
+        [
+          {
+            "node": "Merge API Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amadeus API - Search Hotels": {
+      "main": [
+        [
+          {
+            "node": "Merge API Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge API Results": {
+      "main": [
+        [
+          {
+            "node": "Process Flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Compile Itinerary": {
+      "main": [
+        [
+          {
+            "node": "Payment Processing Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment Processing Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Itinerary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Booking Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Itinerary": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Send Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Schedule Reminder Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Booking Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Bookings Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Bookings Sheet": {
+      "main": [
+        [
+          {
+            "node": "Schedule Reminder Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Reminder Data": {
+      "main": [
+        [
+          {
+            "node": "Save Reminder to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Reminder to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger - Check Reminders": {
+      "main": [
+        [
+          {
+            "node": "Read Reminders Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Reminders Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Due Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Due Reminders": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Send Reminder": {
+      "main": [
+        [
+          {
+            "node": "Prepare Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Status Update": {
+      "main": [
+        [
+          {
+            "node": "Update Reminder Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Flights": {
+      "main": [
+        [
+          {
+            "node": "Set - Compile Itinerary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c40e5745-1fe4-41ed-80bf-8d1f90f8525a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "prWrTfMxFWhxhouh",
+  "tags": []
+}

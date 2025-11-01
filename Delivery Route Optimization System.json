@@ -1,0 +1,944 @@
+{
+  "name": "Delivery Route Optimization System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "f8a35841-f2fc-4188-849d-cb4e8cab5769",
+      "name": "Daily 4AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ycz20J8sbOemefP7CySa-dJwNheFziepUUB6_WnOQek",
+          "mode": "list",
+          "cachedResultName": "Delivery Addresses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ycz20J8sbOemefP7CySa-dJwNheFziepUUB6_WnOQek/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ycz20J8sbOemefP7CySa-dJwNheFziepUUB6_WnOQek/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "2a378b0f-6556-4455-b435-5385b4cdabeb",
+      "name": "Get Delivery Addresses",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group deliveries by driver zone\nconst deliveries = $input.all();\nconst zones = {};\n\ndeliveries.forEach(item => {\n  const zone = item.json.zone || 'default';\n  if (!zones[zone]) {\n    zones[zone] = [];\n  }\n  zones[zone].push({\n    address: item.json.address,\n    customerName: item.json.customerName,\n    phoneNumber: item.json.phoneNumber,\n    packageId: item.json.packageId,\n    priority: item.json.priority || 'normal',\n    coordinates: item.json.coordinates || '' // For better routing\n  });\n});\n\n// Create output for each zone\nconst output = [];\nfor (const [zone, addresses] of Object.entries(zones)) {\n  output.push({\n    json: {\n      zone: zone,\n      deliveries: addresses,\n      totalStops: addresses.length\n    }\n  });\n}\n\nreturn output;"
+      },
+      "id": "86724cce-722d-41a7-9170-cdba40cb89dc",
+      "name": "Group by Zones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alternative using GraphHopper (also free)\n// You can also use OSRM (Open Source Routing Machine) which is completely free\n\nconst originalData = $node[\"Group by Zones\"].json;\nconst deliveries = originalData.deliveries;\n\n// For demonstration, we'll create a simple distance-based optimization\n// In production, you'd call OSRM or GraphHopper API here\n\n// Simple nearest neighbor algorithm for route optimization\nfunction optimizeRoute(locations) {\n  if (locations.length <= 2) return locations;\n  \n  const optimized = [locations[0]];\n  const remaining = locations.slice(1, -1);\n  const destination = locations[locations.length - 1];\n  \n  let current = locations[0];\n  \n  while (remaining.length > 0) {\n    // Find nearest unvisited location\n    let nearestIdx = 0;\n    let minDistance = Infinity;\n    \n    remaining.forEach((loc, idx) => {\n      // Simple distance calculation (you'd use real coordinates here)\n      const distance = Math.random() * 100; // Placeholder\n      if (distance < minDistance) {\n        minDistance = distance;\n        nearestIdx = idx;\n      }\n    });\n    \n    optimized.push(remaining[nearestIdx]);\n    current = remaining[nearestIdx];\n    remaining.splice(nearestIdx, 1);\n  }\n  \n  optimized.push(destination);\n  return optimized;\n}\n\nconst optimizedDeliveries = optimizeRoute(deliveries);\n\n// Calculate estimated time (15 min per stop + travel)\nconst estimatedMinutes = optimizedDeliveries.length * 15 + 30;\n\n// Assign drivers based on zones with WhatsApp numbers\nconst driverAssignments = {\n  'north': '923001234567',  // Pakistan WhatsApp format without +\n  'south': '923001234568',\n  'east': '923001234569',\n  'west': '923001234570',\n  'default': '923001234571'\n};\n\nconst driverPhone = driverAssignments[originalData.zone] || driverAssignments.default;\n\nreturn [{\n  json: {\n    zone: originalData.zone,\n    driverPhone: driverPhone,\n    optimizedRoute: optimizedDeliveries,\n    totalStops: optimizedDeliveries.length,\n    estimatedDuration: estimatedMinutes + ' minutes',\n    routeId: `ROUTE-${Date.now()}`,\n    timestamp: new Date().toISOString(),\n    routeText: optimizedDeliveries.map((d, i) => \n      `${i+1}. ${d.customerName}\\n   📍 ${d.address}\\n   📦 ${d.packageId}`\n    ).join('\\n\\n')\n  }\n}];"
+      },
+      "id": "103237af-36ea-4ebb-a21d-5f6d8b474492",
+      "name": "Process Optimized Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send WhatsApp message via Green API\nconst routeData = $input.all()[0].json;\n\n// Green API configuration\nconst GREEN_API_INSTANCE = 'YOUR_GREEN_API_INSTANCE';\nconst GREEN_API_TOKEN = 'YOUR_GREEN_API_TOKEN';\n\n// Format message for WhatsApp\nconst message = `🚚 *Route Assignment ${routeData.routeId}*\\n\\n` +\n  `📍 *Zone:* ${routeData.zone}\\n` +\n  `📦 *Total Stops:* ${routeData.totalStops}\\n` +\n  `⏱️ *Est. Duration:* ${routeData.estimatedDuration}\\n\\n` +\n  `*📋 Delivery Route:*\\n` +\n  `${routeData.routeText}\\n\\n` +\n  `_Track deliveries at:_\\n` +\n  `https://yourdomain.com/track/${routeData.routeId}\\n\\n` +\n  `✅ Reply with 'START' when beginning route`;\n\n// Prepare WhatsApp API request\nconst whatsappRequest = {\n  url: `https://api.green-api.com/waInstance${GREEN_API_INSTANCE}/sendMessage/${GREEN_API_TOKEN}`,\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: {\n    chatId: `${routeData.driverPhone}@c.us`,\n    message: message\n  }\n};\n\n// Return formatted data for HTTP Request node\nreturn [{\n  json: {\n    ...routeData,\n    whatsappRequest: whatsappRequest,\n    messageContent: message,\n    driverWhatsApp: `${routeData.driverPhone}@c.us`\n  }\n}];"
+      },
+      "id": "b78d83cb-900f-4fe3-afb4-c25bfcd3fd95",
+      "name": "Prepare WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.whatsappRequest.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $json.driverWhatsApp }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.messageContent }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ea67c223-d4bc-4c65-b4db-9aa15757574e",
+      "name": "Send WhatsApp via Green API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        704,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "delivery-status",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "0602e660-997f-47c7-8b55-634bf9e7029a",
+      "name": "Delivery Status Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        208
+      ],
+      "webhookId": "delivery-tracking-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fixed \"Process Delivery Update\" node - correctly accesses webhook body\n\n// Get webhook data\nconst webhookInput = $input.all()[0].json;\n\n// The actual data is in the body object\nconst webhookData = webhookInput.body || webhookInput;\n\nconsole.log(\"Received webhook body:\", JSON.stringify(webhookData, null, 2));\n\n// Validate required fields\nconst requiredFields = ['routeId', 'packageId', 'status'];\nconst missingFields = requiredFields.filter(field => !webhookData[field]);\n\nif (missingFields.length > 0) {\n  console.error(\"Missing required fields:\", missingFields);\n  console.error(\"Looking in wrong place? Body data:\", webhookInput.body);\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}`);\n}\n\n// Process the delivery status with defaults for optional fields\nconst statusData = {\n  routeId: webhookData.routeId,\n  packageId: webhookData.packageId,\n  status: webhookData.status,\n  timestamp: webhookData.timestamp || new Date().toISOString(),\n  driverNotes: webhookData.notes || '',\n  gpsLocation: webhookData.gpsLocation || null,\n  customerSignature: webhookData.signature || null,\n  photoProof: webhookData.photoUrl || null\n};\n\n// Determine notification type and emoji\nlet notificationType = 'update';\nlet statusEmoji = '📦';\n\nconst statusLower = webhookData.status.toLowerCase();\n\nif (statusLower === 'delivered' || statusLower === 'completed') {\n  notificationType = 'completion';\n  statusEmoji = '✅';\n} else if (statusLower === 'failed' || statusLower === 'cancelled') {\n  notificationType = 'failure';\n  statusEmoji = '❌';\n} else if (statusLower === 'in_transit' || statusLower === 'in transit') {\n  statusEmoji = '🚚';\n  notificationType = 'update';\n} else if (statusLower === 'pending') {\n  statusEmoji = '⏳';\n  notificationType = 'update';\n}\n\n// Check if action is required\nconst requiresAction = ['failed', 'damaged', 'refused', 'cancelled'].includes(statusLower);\n\nconsole.log(\"Processed status:\", {\n  status: statusLower,\n  emoji: statusEmoji,\n  type: notificationType,\n  requiresAction: requiresAction\n});\n\n// Additional metadata from headers if needed\nconst clientInfo = {\n  ip: webhookInput.headers?.['cf-connecting-ip'] || webhookInput.headers?.['x-real-ip'],\n  country: webhookInput.headers?.['cf-ipcountry'],\n  userAgent: webhookInput.headers?.['user-agent']\n};\n\n// Return processed data\nreturn [{\n  json: {\n    ...statusData,\n    notificationType: notificationType,\n    statusEmoji: statusEmoji,\n    requiresAction: requiresAction,\n    processed: true,\n    processedAt: new Date().toISOString(),\n    clientInfo: clientInfo\n  }\n}];"
+      },
+      "id": "8812711c-346d-49db-b061-34df75659f6a",
+      "name": "Process Delivery Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y",
+          "mode": "list",
+          "cachedResultName": "Tracking Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "RouteID",
+              "displayName": "RouteID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PackageID",
+              "displayName": "PackageID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "GPS",
+              "displayName": "GPS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RequiresAction",
+              "displayName": "RequiresAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PhotoProof",
+              "displayName": "PhotoProof",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "routeId",
+              "displayName": "routeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "packageId",
+              "displayName": "packageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "driverNotes",
+              "displayName": "driverNotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gpsLocation",
+              "displayName": "gpsLocation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customerSignature",
+              "displayName": "customerSignature",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "photoProof",
+              "displayName": "photoProof",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notificationType",
+              "displayName": "notificationType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "statusEmoji",
+              "displayName": "statusEmoji",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "requiresAction",
+              "displayName": "requiresAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processed",
+              "displayName": "processed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processedAt",
+              "displayName": "processedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "clientInfo",
+              "displayName": "clientInfo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7ca3078b-ea73-4e1d-ba27-1e97f697ddf1",
+      "name": "Log Delivery Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -96,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send WhatsApp notification to dispatch via Green API\nconst data = $input.all()[0].json;\n\nconst GREEN_API_INSTANCE = 'YOUR_GREEN_API_INSTANCE';\nconst GREEN_API_TOKEN = 'YOUR_GREEN_API_TOKEN';\nconst DISPATCH_WHATSAPP = '923001234572'; // Dispatch WhatsApp number\n\n// Create notification message\nconst message = `${data.statusEmoji} *Delivery ${data.notificationType.toUpperCase()}*\\n\\n` +\n  `📦 *Package:* ${data.packageId}\\n` +\n  `🚚 *Route:* ${data.routeId}\\n` +\n  `📊 *Status:* ${data.status}\\n` +\n  `🕐 *Time:* ${new Date(data.timestamp).toLocaleString()}\\n` +\n  (data.gpsLocation ? `📍 *GPS:* ${data.gpsLocation}\\n` : '') +\n  (data.driverNotes ? `📝 *Notes:* ${data.driverNotes}\\n` : '') +\n  (data.requiresAction ? `\\n⚠️ *ACTION REQUIRED - Please Review*` : '');\n\nconst apiUrl = `https://api.green-api.com/waInstance${GREEN_API_INSTANCE}/sendMessage/${GREEN_API_TOKEN}`;\n\nreturn [{\n  json: {\n    ...data,\n    dispatchMessage: message,\n    apiUrl: apiUrl,\n    chatId: `${DISPATCH_WHATSAPP}@c.us`\n  }\n}];"
+      },
+      "id": "a8be773e-1136-4ab1-9d0a-77ffb8b840bb",
+      "name": "Prepare Dispatch Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $json.chatId }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.dispatchMessage }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eb528c42-e795-4621-8e1e-0107b528f58f",
+      "name": "WhatsApp Dispatch Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        304,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Delivery status updated successfully\",\n  \"processedAt\": \"{{ $now.toISO() }}\",\n  \"packageId\": \"{{ $json.packageId }}\"\n}",
+        "options": {}
+      },
+      "id": "40739712-9887-4368-9696-93de58a96677",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        512,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "291e046a-5ab2-4f79-91bb-9b2e43b540ac",
+      "name": "Hourly Summary Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y",
+          "mode": "list",
+          "cachedResultName": "Tracking Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fo1bupnXpckK0-gmZHrZJhocsqkYAjV4w9A0KwkuH6Y/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "89560227-d234-401e-80bb-fbb0b861c95d",
+      "name": "Get Today's Deliveries",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fixed \"Generate Summary\" node - processes ALL records or recent records\n// Choose Option 1 or Option 2 based on your needs\n\n// =====================================\n// OPTION 1: Process ALL records (no date filter)\n// =====================================\n\nconst deliveries = $input.all();\nconst now = new Date();\n\nconsole.log(`Processing ${deliveries.length} total records`);\n\n// Use ALL deliveries (no date filtering)\nconst todaysDeliveries = deliveries;\n\n// Helper function to normalize status values\nfunction normalizeStatus(status) {\n  if (!status) return 'unknown';\n  \n  // Remove quotes, trim whitespace, convert to lowercase\n  const cleaned = String(status)\n    .replace(/[\"']/g, '')\n    .trim()\n    .toLowerCase();\n  \n  // Handle underscore vs space\n  if (cleaned === 'in_transit' || cleaned === 'in transit') {\n    return 'in_transit';\n  }\n  \n  return cleaned;\n}\n\n// Calculate statistics\nconst stats = {\n  total: todaysDeliveries.length,\n  delivered: 0,\n  inTransit: 0,\n  failed: 0,\n  pending: 0,\n  unknown: 0\n};\n\n// Count deliveries by status\ntodaysDeliveries.forEach(delivery => {\n  const statusValue = delivery.json.Status || delivery.json.status;\n  const normalizedStatus = normalizeStatus(statusValue);\n  \n  switch(normalizedStatus) {\n    case 'delivered':\n      stats.delivered++;\n      break;\n    case 'in_transit':\n      stats.inTransit++;\n      break;\n    case 'failed':\n      stats.failed++;\n      break;\n    case 'pending':\n      stats.pending++;\n      break;\n    default:\n      stats.unknown++;\n  }\n});\n\n// Calculate success rate\nstats.successRate = stats.total > 0 ? \n  ((stats.delivered / stats.total) * 100).toFixed(1) : '0';\n\nconsole.log(\"Statistics:\", stats);\n\n// Identify issues requiring action\nconst issues = todaysDeliveries.filter(d => {\n  return d.json.RequiresAction === true || \n         d.json.RequiresAction === 'true';\n});\n\n// Format report message\nconst reportMessage = `📊 *DELIVERY REPORT*\\n` +\n  `Generated: ${now.toLocaleString()}\\n\\n` +\n  `📈 *Statistics:*\\n` +\n  `Total Deliveries: ${stats.total}\\n` +\n  `✅ Delivered: ${stats.delivered}\\n` +\n  `🚚 In Transit: ${stats.inTransit}\\n` +\n  `❌ Failed: ${stats.failed}\\n` +\n  `⏳ Pending: ${stats.pending}\\n` +\n  `📊 Success Rate: ${stats.successRate}%\\n` +\n  (issues.length > 0 ? `\\n⚠️ *Items Requiring Action (${issues.length}):*\\n${issues.map(i => \n    `• ${i.json.PackageID} - ${i.json.Status}: ${i.json.Notes}`).join('\\n')}` : '\\n✨ No issues requiring attention');\n\nreturn [{\n  json: {\n    reportTime: now.toISOString(),\n    date: now.toDateString(),\n    hour: now.getHours(),\n    statistics: stats,\n    requiresAction: issues.length,\n    actionItems: issues.map(i => ({\n      packageId: i.json.PackageID,\n      status: i.json.Status,\n      notes: i.json.Notes\n    })),\n    reportMessage: reportMessage\n  }\n}];\n\n// =====================================\n// OPTION 2: Process last 24 hours only\n// =====================================\n\n/*\nconst deliveries = $input.all();\nconst now = new Date();\nconst last24Hours = new Date(now.getTime() - (24 * 60 * 60 * 1000));\n\nconsole.log(`Processing ${deliveries.length} total records`);\nconsole.log(`Filtering for records after: ${last24Hours.toISOString()}`);\n\n// Filter last 24 hours deliveries\nconst recentDeliveries = deliveries.filter(item => {\n  if (!item.json.Timestamp) return true; // Include if no timestamp\n  \n  try {\n    const timestamp = new Date(item.json.Timestamp);\n    return timestamp >= last24Hours;\n  } catch (e) {\n    return true; // Include if date parsing fails\n  }\n});\n\nconsole.log(`Found ${recentDeliveries.length} recent deliveries`);\n\n// Continue with same logic as Option 1 but use recentDeliveries instead of todaysDeliveries\n*/\n\n// =====================================\n// OPTION 3: Process by specific date range\n// =====================================\n\n/*\nconst deliveries = $input.all();\nconst now = new Date();\n\n// Set your date range here\nconst startDate = new Date('2024-12-19'); // Adjust to your data's date\nconst endDate = new Date('2024-12-20');   // End of range\n\nconst filteredDeliveries = deliveries.filter(item => {\n  if (!item.json.Timestamp) return true;\n  \n  try {\n    const timestamp = new Date(item.json.Timestamp);\n    return timestamp >= startDate && timestamp <= endDate;\n  } catch (e) {\n    return true;\n  }\n});\n\n// Continue with processing...\n*/"
+      },
+      "id": "f2bb72cf-40f4-4ccf-88db-6b1853d7d240",
+      "name": "Generate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send summary report via WhatsApp to management\nconst reportData = $input.all()[0].json;\n\nconst GREEN_API_INSTANCE = 'YOUR_GREEN_API_INSTANCE';\nconst GREEN_API_TOKEN = 'YOUR_GREEN_API_TOKEN';\nconst MANAGEMENT_WHATSAPP = '923001234573'; // Management WhatsApp\n\nconst apiUrl = `https://api.green-api.com/waInstance${GREEN_API_INSTANCE}/sendMessage/${GREEN_API_TOKEN}`;\n\nreturn [{\n  json: {\n    apiUrl: apiUrl,\n    chatId: `${MANAGEMENT_WHATSAPP}@c.us`,\n    message: reportData.reportMessage\n  }\n}];"
+      },
+      "id": "9c4dbfc6-375e-4d0d-8b31-cc463131730f",
+      "name": "Prepare Management Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $json.chatId }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d6f7b830-0e9e-4160-9cec-de7191b01348",
+      "name": "Send Summary to Management",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        304,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SOLUTION 1: Replace the OpenRouteService node with a Code node\n// This code node should come AFTER \"Group by Zones\" and BEFORE \"Process Optimized Route\"\n\n// Node Name: \"Calculate Route (Free OSRM)\"\n// Node Type: Code (n8n-nodes-base.code)\n\nconst zoneData = $input.all()[0].json;\nconst deliveries = zoneData.deliveries;\n\n// Extract coordinates from delivery data\n// Assuming coordinates are in format \"longitude,latitude\"\nconst coordinates = deliveries.map(d => {\n  if (d.coordinates) {\n    return d.coordinates.split(',').map(c => parseFloat(c.trim()));\n  }\n  // Default coordinates for Khurarianwala if not provided\n  return [72.6672 + Math.random() * 0.01, 31.4504 + Math.random() * 0.01];\n});\n\n// Build OSRM API URL\nconst waypoints = coordinates.map(coord => `${coord[0]},${coord[1]}`).join(';');\nconst osrmUrl = `http://router.project-osrm.org/route/v1/driving/${waypoints}?overview=full&geometries=geojson&steps=true`;\n\n// Make the API call\ntry {\n  const response = await $http.get(osrmUrl);\n  \n  if (response.routes && response.routes.length > 0) {\n    const route = response.routes[0];\n    \n    // Extract route information\n    const totalDistance = (route.distance / 1000).toFixed(2); // Convert to km\n    const totalDuration = Math.round(route.duration / 60); // Convert to minutes\n    \n    // Get optimized waypoint order if available\n    const waypointOrder = route.waypoint_index || [];\n    \n    // Reorder deliveries based on optimization\n    let optimizedDeliveries = [...deliveries];\n    if (waypointOrder.length > 0) {\n      optimizedDeliveries = waypointOrder.map(index => deliveries[index]);\n    }\n    \n    return [{\n      json: {\n        ...zoneData,\n        routeData: {\n          distance: `${totalDistance} km`,\n          duration: `${totalDuration} minutes`,\n          geometry: route.geometry,\n          steps: route.legs ? route.legs.map(leg => ({\n            distance: leg.distance,\n            duration: leg.duration,\n            summary: leg.summary\n          })) : []\n        },\n        optimizedDeliveries: optimizedDeliveries,\n        apiResponse: response\n      }\n    }];\n  }\n} catch (error) {\n  // Fallback to simple distance-based optimization\n  console.log(\"OSRM API failed, using fallback optimization\");\n  \n  // Simple nearest neighbor algorithm\n  const optimized = [deliveries[0]];\n  const remaining = [...deliveries.slice(1)];\n  \n  while (remaining.length > 0) {\n    const current = optimized[optimized.length - 1];\n    let nearestIdx = 0;\n    let minDistance = Infinity;\n    \n    remaining.forEach((delivery, idx) => {\n      // Simple distance calculation (you can improve this)\n      const distance = Math.random(); // Placeholder - implement actual distance\n      if (distance < minDistance) {\n        minDistance = distance;\n        nearestIdx = idx;\n      }\n    });\n    \n    optimized.push(remaining[nearestIdx]);\n    remaining.splice(nearestIdx, 1);\n  }\n  \n  return [{\n    json: {\n      ...zoneData,\n      routeData: {\n        distance: \"Calculated locally\",\n        duration: `${deliveries.length * 15} minutes (estimated)`,\n        method: \"fallback\"\n      },\n      optimizedDeliveries: optimized,\n      error: error.message\n    }\n  }];\n}\n\n// ============================================\n// SOLUTION 2: If you want to use OpenRouteService\n// ============================================\n\n// First, get your API key from: https://openrouteservice.org/dev/#/signup\nconst ORS_API_KEY = 'YOUR_OPENROUTESERVICE_API_KEY';\n\n// Format coordinates for OpenRouteService (requires [longitude, latitude] format)\nconst orsCoordinates = deliveries.map(d => {\n  if (d.coordinates) {\n    const parts = d.coordinates.split(',');\n    return [parseFloat(parts[0]), parseFloat(parts[1])];\n  }\n  return [72.6672, 31.4504]; // Default\n});\n\n// OpenRouteService optimization endpoint\nconst orsUrl = 'https://api.openrouteservice.org/v2/directions/driving-car';\n\nconst orsBody = {\n  coordinates: orsCoordinates,\n  optimize_waypoints: true,\n  instructions: true,\n  units: 'km'\n};\n\ntry {\n  const orsResponse = await $http.post(orsUrl, {\n    body: orsBody,\n    headers: {\n      'Authorization': ORS_API_KEY,\n      'Content-Type': 'application/json'\n    }\n  });\n  \n  // Process ORS response\n  if (orsResponse.routes && orsResponse.routes.length > 0) {\n    const route = orsResponse.routes[0];\n    \n    return [{\n      json: {\n        ...zoneData,\n        routeData: {\n          distance: `${(route.summary.distance / 1000).toFixed(2)} km`,\n          duration: `${Math.round(route.summary.duration / 60)} minutes`,\n          waypoints: route.way_points\n        },\n        optimizedDeliveries: deliveries, // Reorder based on way_points if needed\n        apiResponse: orsResponse\n      }\n    }];\n  }\n} catch (orsError) {\n  console.log(\"ORS API error:\", orsError.message);\n  // Use fallback method\n}\n\n// ============================================\n// SOLUTION 3: Simple Text-to-Coordinates Geocoding\n// ============================================\n\n// If your addresses don't have coordinates, you need to geocode them first\n// Using Nominatim (free OpenStreetMap geocoding)\n\nasync function geocodeAddress(address) {\n  const encodedAddress = encodeURIComponent(address + ', Pakistan');\n  const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`;\n  \n  try {\n    // Important: Nominatim requires a delay between requests\n    await new Promise(resolve => setTimeout(resolve, 1000));\n    \n    const response = await $http.get(nominatimUrl, {\n      headers: {\n        'User-Agent': 'n8n-delivery-system' // Required by Nominatim\n      }\n    });\n    \n    if (response.length > 0) {\n      return {\n        lat: parseFloat(response[0].lat),\n        lon: parseFloat(response[0].lon)\n      };\n    }\n  } catch (error) {\n    console.log(`Geocoding failed for ${address}`);\n  }\n  \n  // Return default coordinates for Khurarianwala\n  return { lat: 31.4504, lon: 72.6672 };\n}\n\n// Geocode all addresses if coordinates are missing\nconst geocodedDeliveries = [];\nfor (const delivery of deliveries) {\n  if (!delivery.coordinates) {\n    const coords = await geocodeAddress(delivery.address);\n    geocodedDeliveries.push({\n      ...delivery,\n      coordinates: `${coords.lon},${coords.lat}`\n    });\n  } else {\n    geocodedDeliveries.push(delivery);\n  }\n}\n\n// Now use the geocoded coordinates with OSRM or OpenRouteService\n// ... continue with routing logic above ..."
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        16
+      ],
+      "id": "96bbd6fe-534f-4295-8ab3-672953e27136",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Delivery Status Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "ahmadimdad007.app.n8n.cloud",
+            "user-agent": "curl/8.7.1",
+            "content-length": "301",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2407:d000:403:b349:5580:22d7:18af:bbac",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "PK",
+            "cf-ray": "987586d702b8a07a-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2407:d000:403:b349:5580:22d7:18af:bbac, 104.23.175.18",
+            "x-forwarded-host": "ahmadimdad007.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-60-78f959c455-qlrwh",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2407:d000:403:b349:5580:22d7:18af:bbac"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "routeId": "ROUTE-1734567890",
+            "packageId": "PKG-001",
+            "status": "delivered",
+            "timestamp": "2025-09-30T18:00:00Z",
+            "gpsLocation": "31.4504,72.6672",
+            "notes": "Delivered to Ahmad Ali",
+            "signature": "signed_by_customer",
+            "photoUrl": "https://example.com/proof1.jpg"
+          },
+          "webhookUrl": "https://ahmadimdad007.app.n8n.cloud/webhook-test/delivery-status",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Log Delivery Status": [
+      {
+        "json": {
+          "routeId": "ROUTE-1734567890",
+          "packageId": "PKG-001",
+          "status": "delivered",
+          "timestamp": "2025-09-30T18:00:00Z",
+          "driverNotes": "Delivered to Ahmad Ali",
+          "gpsLocation": "31.4504,72.6672",
+          "customerSignature": "signed_by_customer",
+          "photoProof": "https://example.com/proof1.jpg",
+          "notificationType": "completion",
+          "statusEmoji": "✅",
+          "requiresAction": false,
+          "processed": true,
+          "processedAt": "2025-09-30T18:56:28.467Z",
+          "clientInfo": {
+            "ip": "2407:d000:403:b349:5580:22d7:18af:bbac",
+            "country": "PK",
+            "userAgent": "curl/8.7.1"
+          }
+        }
+      }
+    ],
+    "Prepare WhatsApp Message": [
+      {
+        "json": {
+          "zone": "north",
+          "driverPhone": "923001234567",
+          "optimizedRoute": [
+            {
+              "address": "Mall Road, Khurarianwala, Punjab",
+              "customerName": "Ahmad Ali",
+              "phoneNumber": 923001234501,
+              "packageId": "PKG-001",
+              "priority": "high",
+              "coordinates": ""
+            },
+            {
+              "address": "School Road, Khurarianwala",
+              "customerName": "Ayesha Bibi",
+              "phoneNumber": 923001234504,
+              "packageId": "PKG-004",
+              "priority": "high",
+              "coordinates": ""
+            },
+            {
+              "address": "Railway Station Road, Khurarianwala",
+              "customerName": "Fatima Khan",
+              "phoneNumber": 923001234502,
+              "packageId": "PKG-002",
+              "priority": "normal",
+              "coordinates": ""
+            },
+            {
+              "address": "GT Road Near Hospital, Khurarianwala",
+              "customerName": "Hassan Malik",
+              "phoneNumber": 923001234503,
+              "packageId": "PKG-003",
+              "priority": "normal",
+              "coordinates": ""
+            },
+            {
+              "address": "Market Street, Khurarianwala",
+              "customerName": "Muhammad Aslam",
+              "phoneNumber": 923001234505,
+              "packageId": "PKG-005",
+              "priority": "normal",
+              "coordinates": ""
+            }
+          ],
+          "totalStops": 5,
+          "estimatedDuration": "105 minutes",
+          "routeId": "ROUTE-1759258599906",
+          "timestamp": "2025-09-30T18:56:39.906Z",
+          "routeText": "1. Ahmad Ali\n   📍 Mall Road, Khurarianwala, Punjab\n   📦 PKG-001\n\n2. Ayesha Bibi\n   📍 School Road, Khurarianwala\n   📦 PKG-004\n\n3. Fatima Khan\n   📍 Railway Station Road, Khurarianwala\n   📦 PKG-002\n\n4. Hassan Malik\n   📍 GT Road Near Hospital, Khurarianwala\n   📦 PKG-003\n\n5. Muhammad Aslam\n   📍 Market Street, Khurarianwala\n   📦 PKG-005",
+          "whatsappRequest": {
+            "url": "https://api.green-api.com/waInstanceYOUR_GREEN_API_INSTANCE/sendMessage/YOUR_GREEN_API_TOKEN",
+            "method": "POST",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "chatId": "923001234567@c.us",
+              "message": "🚚 *Route Assignment ROUTE-1759258599906*\n\n📍 *Zone:* north\n📦 *Total Stops:* 5\n⏱️ *Est. Duration:* 105 minutes\n\n*📋 Delivery Route:*\n1. Ahmad Ali\n   📍 Mall Road, Khurarianwala, Punjab\n   📦 PKG-001\n\n2. Ayesha Bibi\n   📍 School Road, Khurarianwala\n   📦 PKG-004\n\n3. Fatima Khan\n   📍 Railway Station Road, Khurarianwala\n   📦 PKG-002\n\n4. Hassan Malik\n   📍 GT Road Near Hospital, Khurarianwala\n   📦 PKG-003\n\n5. Muhammad Aslam\n   📍 Market Street, Khurarianwala\n   📦 PKG-005\n\n_Track deliveries at:_\nhttps://yourdomain.com/track/ROUTE-1759258599906\n\n✅ Reply with 'START' when beginning route"
+            }
+          },
+          "messageContent": "🚚 *Route Assignment ROUTE-1759258599906*\n\n📍 *Zone:* north\n📦 *Total Stops:* 5\n⏱️ *Est. Duration:* 105 minutes\n\n*📋 Delivery Route:*\n1. Ahmad Ali\n   📍 Mall Road, Khurarianwala, Punjab\n   📦 PKG-001\n\n2. Ayesha Bibi\n   📍 School Road, Khurarianwala\n   📦 PKG-004\n\n3. Fatima Khan\n   📍 Railway Station Road, Khurarianwala\n   📦 PKG-002\n\n4. Hassan Malik\n   📍 GT Road Near Hospital, Khurarianwala\n   📦 PKG-003\n\n5. Muhammad Aslam\n   📍 Market Street, Khurarianwala\n   📦 PKG-005\n\n_Track deliveries at:_\nhttps://yourdomain.com/track/ROUTE-1759258599906\n\n✅ Reply with 'START' when beginning route",
+          "driverWhatsApp": "923001234567@c.us"
+        }
+      }
+    ],
+    "Prepare Management Report": [
+      {
+        "json": {
+          "apiUrl": "https://api.green-api.com/waInstanceYOUR_GREEN_API_INSTANCE/sendMessage/YOUR_GREEN_API_TOKEN",
+          "chatId": "923001234573@c.us",
+          "message": "📊 *DELIVERY REPORT*\nGenerated: 9/30/2025, 6:56:46 PM\n\n📈 *Statistics:*\nTotal Deliveries: 7\n✅ Delivered: 5\n🚚 In Transit: 1\n❌ Failed: 1\n⏳ Pending: 0\n📊 Success Rate: 71.4%\n\n⚠️ *Items Requiring Action (1):*\n• PKG-003 - failed: Customer not available"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Daily 4AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Delivery Addresses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Delivery Addresses": {
+      "main": [
+        [
+          {
+            "node": "Group by Zones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group by Zones": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Optimized Route": {
+      "main": [
+        [
+          {
+            "node": "Prepare WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via Green API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery Status Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Delivery Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Delivery Update": {
+      "main": [
+        [
+          {
+            "node": "Log Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Prepare Dispatch Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Dispatch Notification": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Dispatch Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Dispatch Notification": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hourly Summary Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Deliveries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Deliveries": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Prepare Management Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Management Report": {
+      "main": [
+        [
+          {
+            "node": "Send Summary to Management",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Process Optimized Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "545699d3-a155-42d2-aa34-d18e6bec4c6e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "8wy9kdfFeMFqosC9",
+  "tags": []
+}

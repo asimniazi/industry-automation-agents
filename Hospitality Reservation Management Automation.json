@@ -1,0 +1,1485 @@
+{
+  "name": "Hospitality Reservation Management Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/booking",
+        "options": {}
+      },
+      "id": "39654dfe-8441-4b7b-93ca-91b54189f940",
+      "name": "Booking System Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        672,
+        -528
+      ],
+      "webhookId": "cad72fcb-f9ca-4c0b-ba50-740c33bd1af2"
+    },
+    {
+      "parameters": {
+        "notice": "24 hours before check-in reminder trigger",
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "f7792f3e-c746-4b92-82cf-5226299cd798",
+      "name": "Check-in Reminder Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2bd47f44-683a-4095-b69d-1806bc1d3bcf",
+      "name": "Check If Reservations Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $('Get Upcoming Check-ins').item.json.Phone }}",
+        "message": "=Hi {{ $('Get Upcoming Check-ins').item.json['Guest Name'] }}! Your stay at {{ $('Process Booking Data').first().json.hotelName }} starts tomorrow at 3 PM. Confirmation: {{ $('Get Upcoming Check-ins').item.json['Booking ID'] }}. Looking forward to welcoming you!",
+        "options": {}
+      },
+      "id": "7244baf4-51d1-4404-ae02-9f0d3c47d54d",
+      "name": "Send Check-in SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -304
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "notice": "Checkout day feedback trigger - runs every 2 hours",
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "25310080-3830-48ac-9f6e-66e3d792e793",
+      "name": "Feedback Survey Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8f2e5bff-de37-4af4-b89a-339b9d0dab0d",
+      "name": "Check If Checkouts Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json[\"Email Address\"] }}",
+        "subject": "=How was your stay at Serenity Gardens Resort? - We'd love your feedback!",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Feedback Survey</title>\n    <style>\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }\n        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }\n        .header h1 { margin: 0; font-size: 28px; font-weight: 300; }\n        .content { padding: 30px; }\n        .stay-details { background: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 8px; }\n        .survey-button { display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; text-align: center; }\n        .survey-button:hover { background: #0056b3; }\n        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }\n        .highlight { color: #667eea; font-weight: bold; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Serenity Gardens Resort</h1>\n            <p>Thank You for Your Stay!</p>\n        </div>\n        \n        <div class=\"content\">\n            <p>Dear {{ $json[\"Full Name\"] }},</p>\n            \n            <p>Thank you for choosing Serenity Gardens Resort for your recent stay! We sincerely hope you had a wonderful and memorable experience with us.</p>\n            \n            <div class=\"stay-details\">\n                <h3>Your Recent Stay Details:</h3>\n                <p><strong>Guest:</strong> {{ $json[\"Full Name\"] }}</p>\n                <p><strong>Check-in:</strong> {{ $json[\"Check-in Date\"] }}</p>\n                <p><strong>Check-out:</strong> {{ $json[\"Check-out Date\"] }}</p>\n                <p><strong>Room Type:</strong> {{ $json[\"Room Type\"] }}</p>\n                <p><strong>Guests:</strong> {{ $json[\"Number of Guests\"] }}</p>\n            </div>\n            \n            <p>Your feedback is incredibly valuable to us and helps us continue to improve our services for all our guests. We would be grateful if you could take just a few minutes to share your thoughts about your stay.</p>\n            \n            <p style=\"text-align: center;\">\n                <a href=\"https://form.typeform.com/to/pq3DdBjN?booking_id={{ $json.id }}&guest_name={{ $json[\"Full Name\"] }}&email={{ $json[\"Email Address\"] }}\" class=\"survey-button\">Share Your Feedback</a>\n            </p>\n            \n            <p>The survey should take no more than 3 minutes to complete, and your responses will help us ensure future guests have an even better experience.</p>\n            \n            <p class=\"highlight\">Special Offer: Complete the survey and receive a 15% discount on your next stay with us!</p>\n            \n            <p>Thank you again for staying with us, and we look forward to welcoming you back to paradise soon!</p>\n            \n            <p>Warm regards,<br>\n            <strong>The Serenity Gardens Resort Team</strong></p>\n        </div>\n        \n        <div class=\"footer\">\n            <p>Your opinion matters to us. Thank you for helping us improve!</p>\n            <p>If you have any immediate concerns, please contact us at +1 (555) 888-RESORT</p>\n            <p>© 2024 Serenity Gardens Resort. All rights reserved.</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "07eaf835-d530-40c8-8276-3eafb5959f87",
+      "name": "Send Feedback Survey",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        -80
+      ],
+      "webhookId": "b0a42abb-e6e6-443e-a8eb-3fc7dcf74243",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "formId": "=pq3DdBjN"
+      },
+      "id": "226fc89b-280e-47af-8d90-bd61e3b6ebea",
+      "name": "Survey Response Trigger",
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        256
+      ],
+      "webhookId": "8ae4e1fa-c360-4f83-b6ce-cd1688e41682",
+      "credentials": {
+        "typeformOAuth2Api": {
+          "id": "oOOGkXmA2exPcH3O",
+          "name": "Typeform account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.fields[\"How would you rate your overall stay at Serenity Gardens Resort?\"] }}",
+              "rightValue": "Excellent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4623ece-27c5-4aca-b196-7e61af704535",
+      "name": "Check Rating Score",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.fields[\"Email Address\"] }}",
+        "subject": "URGENT: Low Guest Rating Alert - Immediate Follow-up Required",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Low Rating Alert</title>\n    <style>\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }\n        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }\n        .header { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 30px; text-align: center; }\n        .header h1 { margin: 0; font-size: 28px; font-weight: 300; }\n        .content { padding: 30px; }\n        .alert-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 20px; margin: 20px 0; border-radius: 5px; }\n        .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n        .details-table th, .details-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .details-table th { background-color: #f8f9fa; font-weight: 600; color: #495057; }\n        .action-section { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .contact-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }\n        .rating-score { font-size: 24px; font-weight: bold; color: #dc3545; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>URGENT ALERT</h1>\n            <p>Low Guest Rating Received</p>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"alert-box\">\n                <h2 style=\"margin-top: 0;\">Immediate Attention Required</h2>\n                <p>A guest has submitted a low rating that requires immediate follow-up action to address their concerns and prevent negative reviews.</p>\n            </div>\n            \n            <h3>Guest Feedback Details</h3>\n            <table class=\"details-table\">\n                <tr>\n                    <th>Guest Name</th>\n                    <td>{{ $json.fields[\"Full Name\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Guest Email</th>\n                    <td>{{ $json.fields[\"Email Address\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Overall Rating</th>\n                    <td><span class=\"rating-score\">{{ $json.fields[\"How would you rate your overall stay at Serenity Gardens Resort?\"] }}</span></td>\n                </tr>\n                <tr>\n                    <th>Staff Service Rating</th>\n                    <td>{{ $json.fields[\"How would you rate our staff service?\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Room Rating</th>\n                    <td>{{ $json.fields[\"How clean and comfortable was your room?\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Value for Money</th>\n                    <td>{{ $json.fields[\"How was the value for money?\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Recommendation Score</th>\n                    <td><span class=\"rating-score\">{{ $json.fields[\"How likely are you to recommend us to others?\"] }}/10</span></td>\n                </tr>\n                <tr>\n                    <th>Would Stay Again</th>\n                    <td>{{ $json.fields[\"Would you stay with us again?\"] }}</td>\n                </tr>\n                <tr>\n                    <th>Submission Date</th>\n                    <td>{{ $json.createdTime }}</td>\n                </tr>\n            </table>\n            \n            <h3>Guest Comments</h3>\n            <div style=\"background: #f8f9fa; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0; border-radius: 5px;\">\n                <p><strong>What they liked most:</strong> <em>{{ $json.fields[\"What did you like most about your stay?\"] }}</em></p>\n                <p><strong>What could be improved:</strong> <em>{{ $json.fields[\"What could we improve?\"] }}</em></p>\n            </div>\n            \n            <div class=\"contact-info\">\n                <h3>Guest Contact Information</h3>\n                <p><strong>Name:</strong> {{ $json.fields[\"Full Name\"] }}</p>\n                <p><strong>Email:</strong> {{ $json.fields[\"Email Address\"] }}</p>\n                <p><em>Use this information for direct outreach to address the guest's concerns.</em></p>\n            </div>\n            \n            <div class=\"action-section\">\n                <h3>Required Actions</h3>\n                <ul>\n                    <li><strong>Immediate Response:</strong> Contact {{ $json.fields[\"Full Name\"] }} within 2 hours to acknowledge their feedback</li>\n                    <li><strong>Investigation:</strong> Review the specific issues mentioned in their comments</li>\n                    <li><strong>Resolution:</strong> Offer appropriate compensation or remedial action</li>\n                    <li><strong>Follow-up:</strong> Ensure guest satisfaction and request updated feedback</li>\n                    <li><strong>Process Review:</strong> Identify and address any systemic issues to prevent recurrence</li>\n                </ul>\n            </div>\n            \n            <p><strong>Priority Level:</strong> HIGH - This requires immediate management attention to maintain our reputation and guest satisfaction standards.</p>\n            \n            <p>Please take immediate action to address this guest's concerns and prevent potential negative online reviews.</p>\n        </div>\n        \n        <div class=\"footer\">\n            <p>This is an automated alert from the Guest Feedback Management System.</p>\n            <p>© 2024 Serenity Gardens Resort. All rights reserved.</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9bd7d3a1-742f-4937-8711-d53983261090",
+      "name": "Alert Management Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        352
+      ],
+      "webhookId": "6712cd74-d04b-4647-ad53-4e2b9651c5dd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "apposn909rlt8Gu8V",
+          "mode": "list",
+          "cachedResultName": "Reservations Master",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblrIskc16G9zxXFE",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V/tblrIskc16G9zxXFE"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Marketing Consen": "={{ $json[\"Marketing Consent\"] }}",
+            "Full Name": "={{ $json[\"Guest Name\"] }}",
+            "Email Address": "={{ $json.Email }}",
+            "Phone Number": "={{ $json.Phone }}",
+            "Check-in Date": "={{ $json[\"Check-in Date\"] }}",
+            "Check-out Date": "={{ $json[\"Check-out Date\"] }}",
+            "Number of Guests": "={{ $json[\"Guest Count\"] }}",
+            "Room Type": "={{ $json[\"Room Type\"] }}",
+            "Special Requests": "={{ $json[\"Special Requests\"] }}",
+            "Purpose of Stay": "={{ $json[\"Purpose of Stay\"] }}",
+            "Preferred Communication": "={{ $json[\"Preferred Communication\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Check-in Date",
+              "displayName": "Check-in Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Check-out Date",
+              "displayName": "Check-out Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Number of Guests",
+              "displayName": "Number of Guests",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Room Type",
+              "displayName": "Room Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Standard",
+                  "value": "Standard"
+                },
+                {
+                  "name": "Deluxe",
+                  "value": "Deluxe"
+                },
+                {
+                  "name": "Suite",
+                  "value": "Suite"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Special Requests",
+              "displayName": "Special Requests",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Purpose of Stay",
+              "displayName": "Purpose of Stay",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Business",
+                  "value": "Business"
+                },
+                {
+                  "name": "Leisure",
+                  "value": "Leisure"
+                },
+                {
+                  "name": "Event",
+                  "value": "Event"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Preferred Communication",
+              "displayName": "Preferred Communication",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Email",
+                  "value": "Email"
+                },
+                {
+                  "name": "SMS",
+                  "value": "SMS"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Marketing Consen",
+              "displayName": "Marketing Consen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1104,
+        -528
+      ],
+      "id": "57e4fa45-07a4-4e06-bee3-ee1bd7114a5d",
+      "name": "Save to Reservations DB",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "qQpJC5ICRaePvcor",
+          "name": "Airtable Personal Access Token account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Booking Data Function Node Code\n// This function extracts and transforms webhook data for Airtable\n\nconst webhookData = $input.all()[0].json.body.data;\nconst fields = webhookData.fields;\n\n// Helper function to find field by label\nfunction findField(label) {\n  return fields.find(f => f.label === label);\n}\n\n// Helper function to get dropdown text from selected ID\nfunction getDropdownText(field) {\n  if (!field || !field.value || field.value.length === 0) return '';\n  const selectedId = field.value[0];\n  const option = field.options.find(opt => opt.id === selectedId);\n  return option ? option.text : '';\n}\n\n// Extract and process all booking data\nconst processedData = {\n  // Guest Information\n  \"Guest Name\": findField('Full Name')?.value || '',\n  \"Email\": findField('Email Address')?.value || '',\n  \"Phone\": findField('Phone Number')?.value || '',\n  \n  // Reservation Details\n  \"Check-in Date\": findField('Check-in Date')?.value || '',\n  \"Check-out Date\": findField('Check-out Date')?.value || '',\n  \"Guest Count\": findField('Number of Guests')?.value || 0,\n  \"Room Type\": getDropdownText(findField('Room Type')),\n  \"Special Requests\": findField('Special Requests')?.value || '',\n  \n  // Preferences\n  \"Purpose of Stay\": getDropdownText(findField('Purpose of Stay')),\n  \"Preferred Communication\": getDropdownText(findField('Preferred Communication')),\n  \"Marketing Consent\": findField('Marketing Consent')?.value?.length > 0 || false,\n  \n  // System Fields\n  \"Reservation ID\": webhookData.submissionId || '',\n  \"Booking Status\": \"Pending\",\n  \"Payment Status\": \"Pending\",\n  \"Confirmation Email Sent\": false,\n  \"Check-in Reminder Sent\": false,\n  \"Feedback Survey Sent\": false,\n  \"Survey Response Received\": false,\n  \n  // Additional metadata\n  \"Submission Date\": webhookData.createdAt || '',\n  \"Form ID\": webhookData.formId || '',\n  \"Webhook Source\": \"Tally Form\"\n};\n\n// Calculate number of nights\nif (processedData[\"Check-in Date\"] && processedData[\"Check-out Date\"]) {\n  const checkIn = new Date(processedData[\"Check-in Date\"]);\n  const checkOut = new Date(processedData[\"Check-out Date\"]);\n  const timeDiff = checkOut.getTime() - checkIn.getTime();\n  processedData[\"Number of Nights\"] = Math.ceil(timeDiff / (1000 * 3600 * 24));\n}\n\nreturn processedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -528
+      ],
+      "id": "443ec01b-bde2-445f-98d0-451dbda51e2d",
+      "name": "Process Booking Data1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.fields[\"Email Address\"] }}",
+        "subject": "=Booking Confirmed - Serenity Gardens Resort - Confirmation #{{ $('Save to Reservations DB').item.json.id }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Booking Confirmation</title>\n    <style>\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }\n        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }\n        .header h1 { margin: 0; font-size: 28px; font-weight: 300; }\n        .content { padding: 30px; }\n        .confirmation-box { background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 5px; }\n        .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n        .details-table th, .details-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .details-table th { background-color: #f8f9fa; font-weight: 600; color: #495057; }\n        .info-section { background: #e3f2fd; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .info-section h3 { margin-top: 0; color: #1976d2; }\n        .contact-info { background: #fff3e0; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }\n        .btn { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Serenity Gardens Resort</h1>\n            <p>Booking Confirmation</p>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"confirmation-box\">\n                <h2 style=\"margin-top: 0; color: #667eea;\">✓ Reservation Confirmed</h2>\n                <p><strong>Confirmation Number:</strong> {{ $json.id }}</p>\n                <p><strong>Booking Date:</strong> {{ $('Process Booking Data1').item.json['Submission Date'] }}</p>\n            </div>\n            \n            <p>Dear {{ $json.fields['Full Name'] }},</p>\n            \n            <p>Thank you for choosing Serenity Gardens Resort! We are delighted to confirm your reservation and look forward to providing you with an exceptional stay.</p>\n            \n            <h3>Reservation Details</h3>\n            <table class=\"details-table\">\n                <tr>\n                    <th>Guest Name</th>\n                    <td>{{ $json.fields['Full Name'] }}</td>\n                </tr>\n                <tr>\n                    <th>Check-in Date</th>\n                    <td>{{ $json.fields['Check-in Date'] }} at 3:00 PM</td>\n                </tr>\n                <tr>\n                    <th>Check-out Date</th>\n                    <td>{{ $json.fields['Check-out Date'] }} by 11:00 AM</td>\n                </tr>\n                <tr>\n                    <th>Room Type</th>\n                    <td>{{ $json.fields['Room Type'] }}</td>\n                </tr>\n                <tr>\n                    <th>Number of Guests</th>\n                    <td>{{ $json.fields['Number of Guests'] }}</td>\n                </tr>\n                <tr>\n                    <th>Email</th>\n                    <td>{{ $json.fields['Email Address'] }}</td>\n                </tr>\n                <tr>\n                    <th>Phone</th>\n                    <td>{{ $json.fields['Phone Number'] }}</td>\n                </tr>\n                <tr>\n                    <th>Special Requests</th>\n                    <td>{{ $json.fields['Special Requests'] }}</td>\n                </tr>\n            </table>\n            \n            <div class=\"info-section\">\n                <h3>Hotel Information</h3>\n                <p><strong>Address:</strong> 123 Serenity Boulevard, Paradise Valley, CA 90210</p>\n                <p><strong>Phone:</strong> +1 (555) 888-RESORT</p>\n                <p><strong>Email:</strong> reservations@serenitygardens.com</p>\n                <p><strong>WiFi:</strong> Free high-speed internet available throughout the property</p>\n                <p><strong>Network:</strong> SerenityGuest | Password: Welcome2024</p>\n            </div>\n            \n            <div class=\"info-section\">\n                <h3>Important Information</h3>\n                <ul>\n                    <li><strong>Check-in:</strong> 3:00 PM - 11:00 PM (Late check-in available upon request)</li>\n                    <li><strong>Check-out:</strong> 11:00 AM (Late check-out subject to availability)</li>\n                    <li><strong>Parking:</strong> Complimentary valet parking available</li>\n                    <li><strong>Amenities:</strong> Spa, fitness center, infinity pool, fine dining restaurant</li>\n                    <li><strong>Pet Policy:</strong> Pet-friendly (additional fees may apply)</li>\n                </ul>\n            </div>\n            \n            <div class=\"contact-info\">\n                <h3>Cancellation Policy</h3>\n                <p>Free cancellation up to 24 hours before your check-in date. Cancellations made within 24 hours of check-in will be charged one night's stay. No-shows will be charged the full reservation amount.</p>\n                <p>To modify or cancel your reservation, please contact us at +1 (555) 888-RESORT or email us with your confirmation number.</p>\n            </div>\n            \n            <p>We're committed to making your stay memorable and comfortable. If you have any special requests or questions before your arrival, please don't hesitate to contact our reservations team.</p>\n            \n            <p>Thank you for choosing Serenity Gardens Resort. We look forward to welcoming you to paradise!</p>\n            \n            <p>Warm regards,<br>\n            <strong>The Serenity Gardens Resort Team</strong></p>\n        </div>\n        \n        <div class=\"footer\">\n            <p>This is an automated confirmation email. Please save this email for your records.</p>\n            <p>© 2024 Serenity Gardens Resort. All rights reserved.</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        -528
+      ],
+      "id": "4e5d3e4e-c418-40b2-9b74-da0eae37c1c1",
+      "name": "Send Booking Confirmation",
+      "webhookId": "5a3c320a-aad3-4bda-99a0-3f6ce0a378de",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "apposn909rlt8Gu8V",
+          "mode": "list",
+          "cachedResultName": "Reservations Master",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblrIskc16G9zxXFE",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V/tblrIskc16G9zxXFE"
+        },
+        "filterByFormula": "IS_SAME({Check-in Date}, DATEADD(TODAY(), 1, 'days'), 'day')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        -304
+      ],
+      "id": "0cbccceb-ae10-42c1-9497-3a4051661cbf",
+      "name": "Get Upcoming Check-ins1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "qQpJC5ICRaePvcor",
+          "name": "Airtable Personal Access Token account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "apposn909rlt8Gu8V",
+          "mode": "list",
+          "cachedResultName": "Reservations Master",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblrIskc16G9zxXFE",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V/tblrIskc16G9zxXFE"
+        },
+        "filterByFormula": "AND(   IS_SAME({Check-out Date}, TODAY(), 'day'),   NOT({Feedback Survey Sent}) )",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        -80
+      ],
+      "id": "8d1e62ec-839b-4ddd-ab7b-2ef91b1d068f",
+      "name": "Get Recent Checkouts1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "qQpJC5ICRaePvcor",
+          "name": "Airtable Personal Access Token account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "apposn909rlt8Gu8V",
+          "mode": "list",
+          "cachedResultName": "Reservations Master",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblrIskc16G9zxXFE",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V/tblrIskc16G9zxXFE"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Marketing Consen": "={{ $('Get Recent Checkouts1').item.json[\"Marketing Consen\"] }}",
+            "Number of Guests": "={{ $('Get Recent Checkouts1').item.json[\"Number of Guests\"] }}",
+            "id": "={{ $('Get Recent Checkouts1').item.json.id }}",
+            "Email Address": "={{ $('Get Recent Checkouts1').item.json[\"Email Address\"] }}",
+            "Full Name": "={{ $('Get Recent Checkouts1').item.json[\"Full Name\"] }}",
+            "Phone Number": "={{ $('Get Recent Checkouts1').item.json[\"Phone Number\"] }}",
+            "Check-in Date": "={{ $('Get Recent Checkouts1').item.json[\"Check-in Date\"] }}",
+            "Check-out Date": "={{ $('Get Recent Checkouts1').item.json[\"Check-out Date\"] }}",
+            "Room Type": "={{ $('Get Recent Checkouts1').item.json[\"Room Type\"] }}",
+            "Special Requests": "={{ $('Get Recent Checkouts1').item.json[\"Special Requests\"] }}",
+            "Purpose of Stay": "={{ $('Get Recent Checkouts1').item.json[\"Purpose of Stay\"] }}",
+            "Preferred Communication": "={{ $('Get Recent Checkouts1').item.json[\"Preferred Communication\"] }}",
+            "Feedback Survey Sent": "={{ $('Get Recent Checkouts1').item.json[\"Feedback Survey Sent\"] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Check-in Date",
+              "displayName": "Check-in Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Check-out Date",
+              "displayName": "Check-out Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Number of Guests",
+              "displayName": "Number of Guests",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Room Type",
+              "displayName": "Room Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Standard",
+                  "value": "Standard"
+                },
+                {
+                  "name": "Deluxe",
+                  "value": "Deluxe"
+                },
+                {
+                  "name": "Suite",
+                  "value": "Suite"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Special Requests",
+              "displayName": "Special Requests",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Purpose of Stay",
+              "displayName": "Purpose of Stay",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Business",
+                  "value": "Business"
+                },
+                {
+                  "name": "Leisure",
+                  "value": "Leisure"
+                },
+                {
+                  "name": "Event",
+                  "value": "Event"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Preferred Communication",
+              "displayName": "Preferred Communication",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Email",
+                  "value": "Email"
+                },
+                {
+                  "name": "SMS",
+                  "value": "SMS"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Marketing Consen",
+              "displayName": "Marketing Consen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Feedback Survey Sent",
+              "displayName": "Feedback Survey Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1552,
+        -80
+      ],
+      "id": "96b60c3d-b853-4d88-a33e-e79fa25f09da",
+      "name": "Mark Feedback Sent",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "qQpJC5ICRaePvcor",
+          "name": "Airtable Personal Access Token account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "apposn909rlt8Gu8V",
+          "mode": "list",
+          "cachedResultName": "Reservations Master",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbluLCciNDiFPcbnH",
+          "mode": "list",
+          "cachedResultName": "Table 2",
+          "cachedResultUrl": "https://airtable.com/apposn909rlt8Gu8V/tbluLCciNDiFPcbnH"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{ $json[\"Full Name\"] }}",
+            "Email Address": "={{ $json[\"Email Address\"] }}",
+            "How would you rate your overall stay at Serenity Gardens Resort?": "={{ $json[\"How would you rate your overall stay at Serenity Gardens Resort?\"] }}",
+            "How likely are you to recommend us to others?": "={{ $json[\"How likely are you to recommend us to others?\"] }}",
+            "How would you rate our staff service?": "={{ $json[\"How would you rate our staff service?\"] }}",
+            "How clean and comfortable was your room?": "={{ $json[\"How clean and comfortable was your room?\"] }}",
+            "How was the value for money?": "={{ $json[\"How was the value for money?\"] }}",
+            "What did you like most about your stay?": "={{ $json[\"What did you like most about your stay?\"] }}",
+            "What could we improve?": "={{ $json[\"What could we improve?\"] }}",
+            "Would you stay with us again?": "={{ $json[\"Would you stay with us again?\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "How would you rate your overall stay at Serenity Gardens Resort?",
+              "displayName": "How would you rate your overall stay at Serenity Gardens Resort?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Excellent",
+                  "value": "Excellent"
+                },
+                {
+                  "name": "Very Good",
+                  "value": "Very Good"
+                },
+                {
+                  "name": "Good",
+                  "value": "Good"
+                },
+                {
+                  "name": "Fair",
+                  "value": "Fair"
+                },
+                {
+                  "name": "Poor",
+                  "value": "Poor"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "How likely are you to recommend us to others?",
+              "displayName": "How likely are you to recommend us to others?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "How would you rate our staff service?",
+              "displayName": "How would you rate our staff service?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Excellent",
+                  "value": "Excellent"
+                },
+                {
+                  "name": "Very Good",
+                  "value": "Very Good"
+                },
+                {
+                  "name": "Good",
+                  "value": "Good"
+                },
+                {
+                  "name": "Fair",
+                  "value": "Fair"
+                },
+                {
+                  "name": "Poor",
+                  "value": "Poor"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "How clean and comfortable was your room?",
+              "displayName": "How clean and comfortable was your room?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Excellent",
+                  "value": "Excellent"
+                },
+                {
+                  "name": "Very Good",
+                  "value": "Very Good"
+                },
+                {
+                  "name": "Good",
+                  "value": "Good"
+                },
+                {
+                  "name": "Fair",
+                  "value": "Fair"
+                },
+                {
+                  "name": "Poor",
+                  "value": "Poor"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "How was the value for money?",
+              "displayName": "How was the value for money?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Excellent value",
+                  "value": "Excellent value"
+                },
+                {
+                  "name": "Good value",
+                  "value": "Good value"
+                },
+                {
+                  "name": "Fair value",
+                  "value": "Fair value"
+                },
+                {
+                  "name": "Poor value",
+                  "value": "Poor value"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "What did you like most about your stay?",
+              "displayName": "What did you like most about your stay?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "What could we improve?",
+              "displayName": "What could we improve?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Would you stay with us again?",
+              "displayName": "Would you stay with us again?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Definitely",
+                  "value": "Definitely"
+                },
+                {
+                  "name": "Probably",
+                  "value": "Probably"
+                },
+                {
+                  "name": "Maybe",
+                  "value": "Maybe"
+                },
+                {
+                  "name": "Probably not",
+                  "value": "Probably not"
+                },
+                {
+                  "name": "Definitely not",
+                  "value": "Definitely not"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        256
+      ],
+      "id": "d5bef529-3439-4954-94b0-8141d54433ef",
+      "name": "Save Guest Feedback",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "qQpJC5ICRaePvcor",
+          "name": "Airtable Personal Access Token account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.fields[\"Email Address\"] }}",
+        "subject": "=Thank you for your excellent feedback, {{ $json.fields[\"Full Name\"] }}!",
+        "message": "=<!DOCTYPE html> <html> <head>     <meta charset=\"UTF-8\">     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">     <title>Thank You for Your Feedback</title>     <style>         body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }         .header h1 { margin: 0; font-size: 28px; font-weight: 300; }         .content { padding: 30px; }         .rating-display { background: #f8f9fa; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center; }         .review-buttons { text-align: center; margin: 30px 0; }         .review-button { display: inline-block; background: #007bff; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px; }         .review-button.google { background: #4285f4; }         .review-button.tripadvisor { background: #00af87; }         .review-button:hover { opacity: 0.9; }         .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }         .stars { color: #ffc107; font-size: 24px; }     </style> </head> <body>     <div class=\"container\">         <div class=\"header\">             <h1>Serenity Gardens Resort</h1>             <p>Thank You for Your Amazing Feedback!</p>         </div>                  <div class=\"content\">             <p>Dear {{ $json.fields[\"Full Name\"] }},</p>                          <p>We are absolutely thrilled to receive your wonderful feedback about your recent stay with us! Your positive review truly brightens our day and motivates our entire team to continue delivering exceptional hospitality.</p>                          <div class=\"rating-display\">                 <div class=\"stars\">⭐⭐⭐⭐⭐</div>                 <h3 style=\"margin: 10px 0; color: #28a745;\">Thank you for your {{ $json.fields[\"How would you rate your overall stay at Serenity Gardens Resort?\"] }} rating!</h3>                 <p style=\"margin: 0; font-style: italic;\">\"{{ $json.fields[\"What did you like most about your stay?\"] }}\"</p>             </div>                          <p>Your kind words about our service and facilities mean the world to us. We're so pleased that we were able to exceed your expectations and create a memorable experience for you.</p>                          <p><strong>Would you mind sharing your experience with other travelers?</strong></p>                          <p>Your positive review would help other guests discover what makes Serenity Gardens Resort special. It would mean so much to us if you could take a moment to share your experience on one of these platforms:</p>                          <div class=\"review-buttons\">                 <a href=\"https://www.google.com/search?q=Serenity+Gardens+Resort+reviews\" class=\"review-button google\" target=\"_blank\">Review us on Google</a>                 <a href=\"https://www.tripadvisor.com/\" class=\"review-button tripadvisor\" target=\"_blank\">Review us on TripAdvisor</a>             </div>                          <p>Your honest review helps us maintain our high standards and assists fellow travelers in making informed decisions about their stay.</p>                          <p>As a token of our appreciation for your feedback, we'd love to welcome you back with a special 15% discount on your next stay. Simply mention code <strong>FEEDBACK15</strong> when making your next reservation.</p>                          <p>Thank you once again for choosing Serenity Gardens Resort and for taking the time to share your experience. We look forward to hosting you again soon!</p>                          <p>With heartfelt gratitude,<br>             <strong>The Serenity Gardens Resort Team</strong></p>         </div>                  <div class=\"footer\">             <p>Your feedback helps us continue to improve and provide exceptional experiences.</p>             <p>© 2024 Serenity Gardens Resort. All rights reserved.</p>         </div>     </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1328,
+        160
+      ],
+      "id": "bd05fc33-9118-4348-bf22-4844547fab46",
+      "name": "Send a message",
+      "webhookId": "94225ac2-6d17-4675-a38a-004b93758b4f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Booking System Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "asimkhanniazi.app.n8n.cloud",
+            "user-agent": "Tally Webhooks",
+            "content-length": "2370",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "baggage": "sentry-environment=production,sentry-release=ce64086e4ad502044d931cc66ed2a017514a2ec4,sentry-public_key=6af4b6673f1648edaa8fef3f2ca43405,sentry-trace_id=d87b8b3a48df8629c3ecaca6701717f6,sentry-org_id=407628,sentry-sampled=false,sentry-sample_rand=0.13727171014738504,sentry-sample_rate=0.001",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.96.62.35",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "BE",
+            "cf-ray": "98a0f7bce0ea0cc1-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sentry-trace": "d87b8b3a48df8629c3ecaca6701717f6-e1c13168f0a37aa5-0",
+            "x-forwarded-for": "34.96.62.35, 162.158.216.219",
+            "x-forwarded-host": "asimkhanniazi.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-46-d85945c6c-grhkb",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.96.62.35"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "eventId": "393bc99d-2ef9-492c-bded-7cbe2d56dc8d",
+            "eventType": "FORM_RESPONSE",
+            "createdAt": "2025-10-06T00:16:02.015Z",
+            "data": {
+              "responseId": "5BVKRrQ",
+              "submissionId": "5BVKRrQ",
+              "respondentId": "eqq9bvl",
+              "formId": "nWyXML",
+              "formName": "Book Your Stay - Reservation Form\n",
+              "createdAt": "2025-10-06T00:16:01.000Z",
+              "fields": [
+                {
+                  "key": "question_l6x6zW",
+                  "label": "Full Name",
+                  "type": "INPUT_TEXT",
+                  "value": "Taimoor Tariq"
+                },
+                {
+                  "key": "question_RDADjJ",
+                  "label": "Email Address",
+                  "type": "INPUT_EMAIL",
+                  "value": "asimniazi100@gmail.com"
+                },
+                {
+                  "key": "question_o2q2zV",
+                  "label": "Phone Number",
+                  "type": "INPUT_PHONE_NUMBER",
+                  "value": "+923000281455"
+                },
+                {
+                  "key": "question_pDjdV1",
+                  "label": "Check-in Date",
+                  "type": "INPUT_DATE",
+                  "value": "2025-10-03"
+                },
+                {
+                  "key": "question_19ZkEg",
+                  "label": "Check-out Date",
+                  "type": "INPUT_DATE",
+                  "value": "2025-10-06"
+                },
+                {
+                  "key": "question_MEkD5l",
+                  "label": "Number of Guests",
+                  "type": "INPUT_NUMBER",
+                  "value": 4
+                },
+                {
+                  "key": "question_JOad0r",
+                  "label": "Room Type",
+                  "type": "DROPDOWN",
+                  "value": [
+                    "2b963698-54e9-4bbe-a53f-e3abf6c20247"
+                  ],
+                  "options": [
+                    {
+                      "id": "df6be612-6931-431d-a203-0e4c666e3e74",
+                      "text": "Standard"
+                    },
+                    {
+                      "id": "48cb22c7-2242-49ce-aedd-ee496fa54897",
+                      "text": "Deluxe"
+                    },
+                    {
+                      "id": "2b963698-54e9-4bbe-a53f-e3abf6c20247",
+                      "text": "Suite"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_g9ye4P",
+                  "label": "Special Requests",
+                  "type": "TEXTAREA",
+                  "value": "None."
+                },
+                {
+                  "key": "question_yJKND8",
+                  "label": "Purpose of Stay",
+                  "type": "DROPDOWN",
+                  "value": [
+                    "58beafb4-973b-4129-9af2-3bc5b0fd629a"
+                  ],
+                  "options": [
+                    {
+                      "id": "f4861c81-bc89-4630-9381-8172d12adfdc",
+                      "text": "Business"
+                    },
+                    {
+                      "id": "8d4137e4-c528-4556-9172-444d7a157a40",
+                      "text": "Leisure"
+                    },
+                    {
+                      "id": "63221beb-c704-455a-b144-66c25e6b7b7f",
+                      "text": "Event"
+                    },
+                    {
+                      "id": "58beafb4-973b-4129-9af2-3bc5b0fd629a",
+                      "text": "Other"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_X4VrqP",
+                  "label": "Preferred Communication",
+                  "type": "DROPDOWN",
+                  "value": [
+                    "f0f512cc-4f5d-4342-8ee0-19e03db5b1fa"
+                  ],
+                  "options": [
+                    {
+                      "id": "f0f512cc-4f5d-4342-8ee0-19e03db5b1fa",
+                      "text": "Email"
+                    },
+                    {
+                      "id": "d819c30e-7220-42f7-8aae-cb6183e14856",
+                      "text": "SMS"
+                    },
+                    {
+                      "id": "fec440a2-0930-4c1f-affa-b43abe00bd7a",
+                      "text": "Phone"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_8Zvzel",
+                  "label": "Marketing Consent",
+                  "type": "CHECKBOXES",
+                  "value": [
+                    "f75ffc0d-beb4-46f5-b134-a0cb0d707567"
+                  ],
+                  "options": [
+                    {
+                      "id": "f75ffc0d-beb4-46f5-b134-a0cb0d707567",
+                      "text": "I agree to receive promotional offers"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_8Zvzel_f75ffc0d-beb4-46f5-b134-a0cb0d707567",
+                  "label": "Marketing Consent (I agree to receive promotional offers)",
+                  "type": "CHECKBOXES",
+                  "value": true
+                }
+              ]
+            }
+          },
+          "webhookUrl": "https://asimkhanniazi.app.n8n.cloud/webhook-test/booking",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Survey Response Trigger": [
+      {
+        "json": {
+          "Full Name": "Ahmad Imdad",
+          "Email Address": "f223409@cfd.nu.edu.pk",
+          "How would you rate your overall stay at Serenity Gardens Resort?": "Excellent",
+          "How likely are you to recommend us to others?": 10,
+          "How would you rate our staff service?": "Excellent",
+          "How clean and comfortable was your room?": "Excellent",
+          "How was the value for money?": "Excellent value",
+          "What did you like most about your stay?": "None.",
+          "What could we improve?": "None.",
+          "Would you stay with us again?": "Definitely"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Booking System Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Booking Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check-in Reminder Schedule": {
+      "main": [
+        [
+          {
+            "node": "Get Upcoming Check-ins1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Reservations Found": {
+      "main": [
+        [
+          {
+            "node": "Send Check-in SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback Survey Schedule": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Checkouts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Checkouts Found": {
+      "main": [
+        [
+          {
+            "node": "Send Feedback Survey",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Survey Response Trigger": {
+      "main": [
+        [
+          {
+            "node": "Save Guest Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Feedback Survey": {
+      "main": [
+        [
+          {
+            "node": "Mark Feedback Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Rating Score": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Management Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Reservations DB": {
+      "main": [
+        [
+          {
+            "node": "Send Booking Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Booking Data1": {
+      "main": [
+        [
+          {
+            "node": "Save to Reservations DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Upcoming Check-ins1": {
+      "main": [
+        [
+          {
+            "node": "Check If Reservations Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Checkouts1": {
+      "main": [
+        [
+          {
+            "node": "Check If Checkouts Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Guest Feedback": {
+      "main": [
+        [
+          {
+            "node": "Check Rating Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c5b0bf00-a1b8-40ab-8503-df3c50ef161d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "H3KCZZBx40Rpg23J",
+  "tags": []
+}

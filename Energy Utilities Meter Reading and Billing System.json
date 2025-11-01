@@ -1,0 +1,991 @@
+{
+  "name": "Energy Utilities Meter Reading and Billing System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "61b68bdb-2986-4170-95b3-f7ba5dce5922",
+      "name": "Monthly Meter Reading Schedule1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        432
+      ],
+      "notice": "Runs on 1st of every month at 9:00 AM"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c",
+          "mode": "list",
+          "cachedResultName": "Energy_Customers_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "2e005971-a718-4ff8-880e-31da8f2b4e21",
+      "name": "Get All Customers1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        432
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.city || 'London' }}"
+            },
+            {
+              "name": "appid",
+              "value": ""
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ecefd3bc-5add-480b-930b-2571fe9fcda1",
+      "name": "Get Weather Data1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulate Smart Meter Reading for all incoming items\n\nconst items = $input.all();\n\nconst results = items.map(item => {\n  const customerData = item.json;\n\n  const currentDate = new Date();\n  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());\n\n  // Base consumption varies by plan type\n  const baseConsumption = customerData.plan_type === 'commercial' ? 2500 : 900;\n\n  // Add some randomization to make readings realistic (±30%)\n  const variationFactor = 0.7 + (Math.random() * 0.6);\n\n  // Calculate previous reading (stored or generated)\n  let previousReading = customerData.last_reading || Math.floor(10000 + Math.random() * 90000);\n\n  // Seasonal variation\n  const month = currentDate.getMonth();\n  let seasonalFactor = 1;\n  if (month >= 5 && month <= 8) { // Summer\n    seasonalFactor = 1.3;\n  } else if (month >= 11 || month <= 2) { // Winter\n    seasonalFactor = 1.25;\n  }\n\n  const monthlyUsage = Math.floor(baseConsumption * variationFactor * seasonalFactor);\n  const currentReading = previousReading + monthlyUsage;\n\n  return {\n    json: {\n      ...customerData,\n      meter_id: customerData.meter_id,\n      customer_id: customerData.customer_id,\n      reading_date: currentDate.toISOString(),\n      reading_type: 'monthly',\n      current_reading: currentReading,\n      previous_reading: previousReading,\n      usage_period: {\n        start: lastMonth.toISOString().split('T')[0],\n        end: currentDate.toISOString().split('T')[0]\n      },\n      meter_status: 'active',\n      reading_quality: 'actual',\n      units: 'kWh'\n    }\n  };\n});\n\nreturn results;\n"
+      },
+      "id": "4fe19b51-2ff5-4b42-886e-a6bb31872ba3",
+      "name": "Get Smart Meter Reading1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "customer_id",
+              "name": "customer_id",
+              "value": "={{ $('Get All Customers1').item.json.customer_id }}",
+              "type": "string"
+            },
+            {
+              "id": "customer_name",
+              "name": "customer_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $('Get All Customers1').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "meter_id",
+              "name": "meter_id",
+              "value": "={{ $('Get All Customers1').item.json.meter_id }}",
+              "type": "string"
+            },
+            {
+              "id": "plan_type",
+              "name": "plan_type",
+              "value": "={{ $json.plan_type || 'residential' }}",
+              "type": "string"
+            },
+            {
+              "id": "current_reading",
+              "name": "current_reading",
+              "value": "={{ $json.current_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "previous_reading",
+              "name": "previous_reading",
+              "value": "={{ $json.previous_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "usage_kwh",
+              "name": "usage_kwh",
+              "value": "={{ $json.current_reading - $json.previous_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "temperature",
+              "name": "temperature",
+              "value": "={{ $('Get Weather Data').item.json.main?.temp || 20 }}",
+              "type": "number"
+            },
+            {
+              "id": "weather_adjustment",
+              "name": "weather_adjustment",
+              "value": "={{ $json.temperature > 30 ? 1.15 : ($json.temperature < 10 ? 1.2 : 1) }}",
+              "type": "number"
+            },
+            {
+              "id": "rate_per_kwh",
+              "name": "rate_per_kwh",
+              "value": "={{ $json.plan_type === 'commercial' ? 0.15 : 0.12 }}",
+              "type": "number"
+            },
+            {
+              "id": "energy_charge",
+              "name": "energy_charge",
+              "value": "={{ (parseFloat($json.usage_kwh || 0) * parseFloat($json.rate_per_kwh || 0.12) * parseFloat($json.weather_adjustment || 1)).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "base_charge",
+              "name": "base_charge",
+              "value": "={{ $json.plan_type === 'commercial' ? 50 : 25 }}",
+              "type": "number"
+            },
+            {
+              "id": "taxes",
+              "name": "taxes",
+              "value": "={{ ((parseFloat($json.energy_charge || 0) + parseFloat($json.base_charge || 25)) * 0.08).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "total_amount",
+              "name": "total_amount",
+              "value": "={{ (parseFloat($json.energy_charge || 0) + parseFloat($json.base_charge || 25) + parseFloat($json.taxes || 0)).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "billing_period",
+              "name": "billing_period",
+              "value": "={{ $now.minus(1, 'month').toFormat('MMMM yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "bill_date",
+              "name": "bill_date",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "due_date",
+              "name": "due_date",
+              "value": "={{ $now.plus(15, 'days').toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "invoice_number",
+              "name": "invoice_number",
+              "value": "={{ 'INV-' + $now.toFormat('yyyyMM') + '-' + $json.customer_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0c529d03-7e80-4f8d-b343-564ea5c82b8c",
+      "name": "Calculate Billing Amount1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1392,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-cmM40CZN0jRlDy1serl8epCvCzbtNmw8gRcacyVl80",
+          "mode": "list",
+          "cachedResultName": "Energy_Usage_History",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-cmM40CZN0jRlDy1serl8epCvCzbtNmw8gRcacyVl80/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-cmM40CZN0jRlDy1serl8epCvCzbtNmw8gRcacyVl80/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_id",
+              "displayName": "customer_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "meter_id",
+              "displayName": "meter_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "billing_period",
+              "displayName": "billing_period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "previous_reading",
+              "displayName": "previous_reading",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_reading",
+              "displayName": "current_reading",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usage_kwh",
+              "displayName": "usage_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rate_per_kwh",
+              "displayName": "rate_per_kwh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "energy_charge",
+              "displayName": "energy_charge",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "base_charge",
+              "displayName": "base_charge",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "taxes",
+              "displayName": "taxes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_amount",
+              "displayName": "total_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bill_date",
+              "displayName": "bill_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_status",
+              "displayName": "payment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "temperature",
+              "displayName": "temperature",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "weather_adjustment",
+              "displayName": "weather_adjustment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "plan_type",
+              "displayName": "plan_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "af8acb59-5ce3-4c2b-9720-55f494c294a9",
+      "name": "Store Usage History1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1616,
+        336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Generate HTML bill\nconst bill = $input.item.json;\n\nconst html = `<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 800px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .invoice-details { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n        .billing-table th, .billing-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .billing-table th { background: #f0f0f0; font-weight: bold; }\n        .total-row { font-weight: bold; font-size: 1.2em; color: #667eea; }\n        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; border-top: 2px solid #eee; margin-top: 40px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>⚡ Energy Utilities Company</h1>\n            <h2>Monthly Bill - ${bill.billing_period}</h2>\n        </div>\n        \n        <div class=\"invoice-details\">\n            <h3>Invoice Details</h3>\n            <table style=\"width: 100%;\">\n                <tr>\n                    <td><strong>Invoice Number:</strong> ${bill.invoice_number}</td>\n                    <td><strong>Bill Date:</strong> ${bill.bill_date}</td>\n                </tr>\n                <tr>\n                    <td><strong>Customer ID:</strong> ${bill.customer_id}</td>\n                    <td><strong>Due Date:</strong> ${bill.due_date}</td>\n                </tr>\n                <tr>\n                    <td><strong>Customer Name:</strong> ${bill.customer_name}</td>\n                    <td><strong>Meter ID:</strong> ${bill.meter_id}</td>\n                </tr>\n                <tr>\n                    <td colspan=\"2\"><strong>Service Address:</strong> ${bill.address}</td>\n                </tr>\n            </table>\n        </div>\n        \n        <h3>Usage Summary</h3>\n        <table class=\"billing-table\">\n            <tr>\n                <th>Description</th>\n                <th>Details</th>\n                <th>Amount</th>\n            </tr>\n            <tr>\n                <td>Previous Reading</td>\n                <td>${bill.previous_reading} kWh</td>\n                <td>-</td>\n            </tr>\n            <tr>\n                <td>Current Reading</td>\n                <td>${bill.current_reading} kWh</td>\n                <td>-</td>\n            </tr>\n            <tr>\n                <td>Total Usage</td>\n                <td>${bill.usage_kwh} kWh @ $${bill.rate_per_kwh}/kWh</td>\n                <td>$${bill.energy_charge}</td>\n            </tr>\n            <tr>\n                <td>Base Service Charge</td>\n                <td>${bill.plan_type} Plan</td>\n                <td>$${bill.base_charge}</td>\n            </tr>\n            <tr>\n                <td>Weather Adjustment</td>\n                <td>Factor: ${bill.weather_adjustment}</td>\n                <td>Included</td>\n            </tr>\n            <tr>\n                <td>Taxes (8%)</td>\n                <td>-</td>\n                <td>$${bill.taxes}</td>\n            </tr>\n            <tr class=\"total-row\">\n                <td colspan=\"2\">TOTAL AMOUNT DUE</td>\n                <td>$${bill.total_amount}</td>\n            </tr>\n        </table>\n        \n        <div class=\"footer\">\n            <p>Thank you for choosing Energy Utilities Company</p>\n            <p>For questions, call 1-800-ENERGY-1 or visit energyutilities.com</p>\n            <p>Please pay by ${bill.due_date} to avoid late fees</p>\n        </div>\n    </div>\n</body>\n</html>`;\n\nreturn {\n  ...bill,\n  html: html\n};"
+      },
+      "id": "3545cfa7-b57c-4a8f-90c9-66c943593ca4",
+      "name": "Generate Bill HTML1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=maiuyfllll@gmail.com",
+        "subject": "Your Energy Bill for {{ $json.billing_period }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "6842a21a-8742-486b-ade3-5f49ae2c7057",
+      "name": "Send Bill via Gmail1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2064,
+        336
+      ],
+      "webhookId": "eb7748ba-ae53-4665-9419-e4804ce76b83",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "manual-reading",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "222dedb5-e135-4a1e-9015-07d325565357",
+      "name": "Webhook - Manual Reading1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        272,
+        240
+      ],
+      "webhookId": "manual-meter-reading"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "manual",
+              "leftValue": "={{ $json.body.customer_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0bd0c36f-6686-41bc-ac45-438aab8b70e2",
+      "name": "Check Manual Request1",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c",
+          "mode": "list",
+          "cachedResultName": "Energy_Customers_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vZRjGixVMPMm-vK89mpXf-EwK6HixRrnkcUq76Pjl1c/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_id",
+              "lookupValue": "={{ $json.body.customer_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "154acc3d-8e3f-440c-ab39-eddabaa3517f",
+      "name": "Get Single Customer1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8b349949-9682-4782-b21e-9bd3ea16d645",
+      "name": "Manual Reading Response1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "customer_id",
+              "name": "customer_id",
+              "value": "={{ $('Get Single Customer1').item.json.customer_id }}",
+              "type": "string"
+            },
+            {
+              "id": "customer_name",
+              "name": "customer_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $('Get Single Customer1').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "meter_id",
+              "name": "meter_id",
+              "value": "={{ $('Get Single Customer1').item.json.meter_id }}",
+              "type": "string"
+            },
+            {
+              "id": "plan_type",
+              "name": "plan_type",
+              "value": "={{ $json.plan_type || 'residential' }}",
+              "type": "string"
+            },
+            {
+              "id": "current_reading",
+              "name": "current_reading",
+              "value": "={{ $json.current_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "previous_reading",
+              "name": "previous_reading",
+              "value": "={{ $json.previous_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "usage_kwh",
+              "name": "usage_kwh",
+              "value": "={{ $json.current_reading - $json.previous_reading }}",
+              "type": "number"
+            },
+            {
+              "id": "temperature",
+              "name": "temperature",
+              "value": "={{ $('Get Weather Data1').item.json.main?.temp || 20 }}",
+              "type": "number"
+            },
+            {
+              "id": "weather_adjustment",
+              "name": "weather_adjustment",
+              "value": "={{ $json.temperature > 30 ? 1.15 : ($json.temperature < 10 ? 1.2 : 1) }}",
+              "type": "number"
+            },
+            {
+              "id": "rate_per_kwh",
+              "name": "rate_per_kwh",
+              "value": "={{ $json.plan_type === 'commercial' ? 0.15 : 0.12 }}",
+              "type": "number"
+            },
+            {
+              "id": "energy_charge",
+              "name": "energy_charge",
+              "value": "={{ (parseFloat($json.usage_kwh || 0) * parseFloat($json.rate_per_kwh || 0.12) * parseFloat($json.weather_adjustment || 1)).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "base_charge",
+              "name": "base_charge",
+              "value": "={{ $json.plan_type === 'commercial' ? 50 : 25 }}",
+              "type": "number"
+            },
+            {
+              "id": "taxes",
+              "name": "taxes",
+              "value": "={{ ((parseFloat($json.energy_charge || 0) + parseFloat($json.base_charge || 25)) * 0.08).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "total_amount",
+              "name": "total_amount",
+              "value": "={{ (parseFloat($json.energy_charge || 0) + parseFloat($json.base_charge || 25) + parseFloat($json.taxes || 0)).toFixed(2) }}",
+              "type": "number"
+            },
+            {
+              "id": "billing_period",
+              "name": "billing_period",
+              "value": "={{ $now.minus(1, 'month').toFormat('MMMM yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "bill_date",
+              "name": "bill_date",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "due_date",
+              "name": "due_date",
+              "value": "={{ $now.plus(15, 'days').toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "invoice_number",
+              "name": "invoice_number",
+              "value": "={{ 'INV-' + $now.toFormat('yyyyMM') + '-' + $json.customer_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2775757f-396e-403b-b26f-4a4e2865f34f",
+      "name": "Calculate Billing Amount",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1392,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.city || 'London' }}"
+            },
+            {
+              "name": "appid",
+              "value": ""
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "afa90619-85e6-4608-8600-83cf98df0ccd",
+      "name": "Get Weather Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulate Smart Meter Reading for all incoming items\n\nconst items = $input.all();\n\nconst results = items.map(item => {\n  const customerData = item.json;\n\n  const currentDate = new Date();\n  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());\n\n  // Base consumption varies by plan type\n  const baseConsumption = customerData.plan_type === 'commercial' ? 2500 : 900;\n\n  // Add some randomization to make readings realistic (±30%)\n  const variationFactor = 0.7 + (Math.random() * 0.6);\n\n  // Calculate previous reading (stored or generated)\n  let previousReading = customerData.last_reading || Math.floor(10000 + Math.random() * 90000);\n\n  // Seasonal variation\n  const month = currentDate.getMonth();\n  let seasonalFactor = 1;\n  if (month >= 5 && month <= 8) { // Summer\n    seasonalFactor = 1.3;\n  } else if (month >= 11 || month <= 2) { // Winter\n    seasonalFactor = 1.25;\n  }\n\n  const monthlyUsage = Math.floor(baseConsumption * variationFactor * seasonalFactor);\n  const currentReading = previousReading + monthlyUsage;\n\n  return {\n    json: {\n      ...customerData,\n      meter_id: customerData.meter_id,\n      customer_id: customerData.customer_id,\n      reading_date: currentDate.toISOString(),\n      reading_type: 'monthly',\n      current_reading: currentReading,\n      previous_reading: previousReading,\n      usage_period: {\n        start: lastMonth.toISOString().split('T')[0],\n        end: currentDate.toISOString().split('T')[0]\n      },\n      meter_status: 'active',\n      reading_quality: 'actual',\n      units: 'kWh'\n    }\n  };\n});\n\nreturn results;\n"
+      },
+      "id": "b24f17da-e206-4c87-a53d-c78d10900404",
+      "name": "Get Smart Meter Reading",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        432
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook - Manual Reading1": [
+      {
+        "json": {
+          "body": {
+            "customer_id": "C001"
+          }
+        }
+      }
+    ],
+    "Generate Bill HTML1": [
+      {
+        "json": {
+          "customer_id": "C001",
+          "customer_name": "New York",
+          "email": "john.anderson@email.com",
+          "meter_id": "MTR-001-NY",
+          "plan_type": "residential",
+          "current_reading": 83427,
+          "previous_reading": 82596,
+          "usage_kwh": 831,
+          "temperature": 22.14,
+          "weather_adjustment": 1,
+          "rate_per_kwh": 0.12,
+          "energy_charge": 0,
+          "base_charge": 25,
+          "taxes": 2,
+          "total_amount": 25,
+          "billing_period": "September 2025",
+          "bill_date": "2025-10-04",
+          "due_date": "2025-10-19",
+          "invoice_number": "INV-202510-undefined",
+          "html": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 800px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .invoice-details { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n        .billing-table th, .billing-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .billing-table th { background: #f0f0f0; font-weight: bold; }\n        .total-row { font-weight: bold; font-size: 1.2em; color: #667eea; }\n        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; border-top: 2px solid #eee; margin-top: 40px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>⚡ Energy Utilities Company</h1>\n            <h2>Monthly Bill - September 2025</h2>\n        </div>\n        \n        <div class=\"invoice-details\">\n            <h3>Invoice Details</h3>\n            <table style=\"width: 100%;\">\n                <tr>\n                    <td><strong>Invoice Number:</strong> INV-202510-undefined</td>\n                    <td><strong>Bill Date:</strong> 2025-10-04</td>\n                </tr>\n                <tr>\n                    <td><strong>Customer ID:</strong> C001</td>\n                    <td><strong>Due Date:</strong> 2025-10-19</td>\n                </tr>\n                <tr>\n                    <td><strong>Customer Name:</strong> New York</td>\n                    <td><strong>Meter ID:</strong> MTR-001-NY</td>\n                </tr>\n                <tr>\n                    <td colspan=\"2\"><strong>Service Address:</strong> undefined</td>\n                </tr>\n            </table>\n        </div>\n        \n        <h3>Usage Summary</h3>\n        <table class=\"billing-table\">\n            <tr>\n                <th>Description</th>\n                <th>Details</th>\n                <th>Amount</th>\n            </tr>\n            <tr>\n                <td>Previous Reading</td>\n                <td>82596 kWh</td>\n                <td>-</td>\n            </tr>\n            <tr>\n                <td>Current Reading</td>\n                <td>83427 kWh</td>\n                <td>-</td>\n            </tr>\n            <tr>\n                <td>Total Usage</td>\n                <td>831 kWh @ $0.12/kWh</td>\n                <td>$0</td>\n            </tr>\n            <tr>\n                <td>Base Service Charge</td>\n                <td>residential Plan</td>\n                <td>$25</td>\n            </tr>\n            <tr>\n                <td>Weather Adjustment</td>\n                <td>Factor: 1</td>\n                <td>Included</td>\n            </tr>\n            <tr>\n                <td>Taxes (8%)</td>\n                <td>-</td>\n                <td>$2</td>\n            </tr>\n            <tr class=\"total-row\">\n                <td colspan=\"2\">TOTAL AMOUNT DUE</td>\n                <td>$25</td>\n            </tr>\n        </table>\n        \n        <div class=\"footer\">\n            <p>Thank you for choosing Energy Utilities Company</p>\n            <p>For questions, call 1-800-ENERGY-1 or visit energyutilities.com</p>\n            <p>Please pay by 2025-10-19 to avoid late fees</p>\n        </div>\n    </div>\n</body>\n</html>"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Monthly Meter Reading Schedule1": {
+      "main": [
+        [
+          {
+            "node": "Get All Customers1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Customers1": {
+      "main": [
+        [
+          {
+            "node": "Get Weather Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather Data1": {
+      "main": [
+        [
+          {
+            "node": "Get Smart Meter Reading1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Smart Meter Reading1": {
+      "main": [
+        [
+          {
+            "node": "Calculate Billing Amount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Billing Amount1": {
+      "main": [
+        [
+          {
+            "node": "Store Usage History1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Usage History1": {
+      "main": [
+        [
+          {
+            "node": "Generate Bill HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Bill HTML1": {
+      "main": [
+        [
+          {
+            "node": "Send Bill via Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bill via Gmail1": {
+      "main": [
+        [
+          {
+            "node": "Manual Reading Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Manual Reading1": {
+      "main": [
+        [
+          {
+            "node": "Check Manual Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Manual Request1": {
+      "main": [
+        [
+          {
+            "node": "Get Single Customer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Single Customer1": {
+      "main": [
+        [
+          {
+            "node": "Get Weather Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Billing Amount": {
+      "main": [
+        [
+          {
+            "node": "Store Usage History1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather Data": {
+      "main": [
+        [
+          {
+            "node": "Get Smart Meter Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Smart Meter Reading": {
+      "main": [
+        [
+          {
+            "node": "Calculate Billing Amount1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "98428bcc-53da-4ca7-8a03-4dd2692dc172",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "B4pln0X0MYRPAa1M",
+  "tags": []
+}

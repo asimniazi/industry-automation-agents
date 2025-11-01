@@ -1,0 +1,1078 @@
+{
+  "name": "Automated Client Onboarding and Contract Management",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/new-client-signup",
+        "options": {}
+      },
+      "id": "597dfe3b-051f-412f-90df-ae3c32530efb",
+      "name": "New Client Signup",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -160
+      ],
+      "webhookId": "43f5b826-b1f4-426f-8770-269e30d5220c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "typeformUrl",
+              "value": "YOUR_TYPEFORM_URL",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "calendlyUrl",
+              "value": "YOUR_CALENDLY_LINK",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "docusignApiUrl",
+              "value": "https://demo.docusign.net/restapi",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "slackChannel",
+              "value": "#client-onboarding",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6520b955-ddd6-44ca-8b7e-039ef0c28d08",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -496,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('New Client Signup').item.json.body.data.fields[1].value }}",
+        "subject": "Welcome! Please complete your intake form",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Manufacturing Production Schedule</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            margin: 20px;\n            background-color: #f5f5f5;\n        }\n        .container {\n            background-color: white;\n            padding: 30px;\n            border-radius: 8px;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n            max-width: 800px;\n            margin: 0 auto;\n        }\n        h2 {\n            color: #333;\n            border-bottom: 2px solid #007bff;\n            padding-bottom: 10px;\n        }\n        table {\n            width: 100%;\n            border-collapse: collapse;\n            margin: 20px 0;\n        }\n        th, td {\n            padding: 12px;\n            text-align: left;\n            border: 1px solid #ddd;\n        }\n        th {\n            background-color: #007bff;\n            color: white;\n        }\n        tr:nth-child(even) {\n            background-color: #f9f9f9;\n        }\n        .btn-container {\n            text-align: center;\n            margin: 30px 0;\n            padding: 20px;\n            background-color: #f8f9fa;\n            border-radius: 8px;\n            border: 2px dashed #007bff;\n        }\n        .intake-btn {\n            background: linear-gradient(135deg, #007bff, #0056b3);\n            color: white;\n            padding: 15px 30px;\n            text-decoration: none;\n            border-radius: 8px;\n            font-size: 16px;\n            font-weight: bold;\n            display: inline-block;\n            transition: all 0.3s ease;\n            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);\n        }\n        .intake-btn:hover {\n            background: linear-gradient(135deg, #0056b3, #004085);\n            transform: translateY(-2px);\n            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);\n        }\n        .btn-text {\n            margin-bottom: 10px;\n            color: #666;\n            font-size: 14px;\n        }\n        .meta-info {\n            background-color: #e9ecef;\n            padding: 15px;\n            border-radius: 5px;\n            margin: 20px 0;\n        }\n        .footer {\n            text-align: center;\n            color: #666;\n            font-style: italic;\n            margin-top: 30px;\n            padding-top: 20px;\n            border-top: 1px solid #eee;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h2>Manufacturing Production Schedule</h2>\n        \n        <div class=\"meta-info\">\n            <p><strong>Date:</strong> {{DateTime.now().toISODate()}}</p>\n            <p><strong>Items Processed:</strong> {{$input.all().length}}</p>\n        </div>\n\n        <table border=\"1\" style=\"border-collapse: collapse;\">\n            <tr>\n                <th>Product ID</th>\n                <th>Product Name</th>\n                <th>Current Stock</th>\n                <th>Production Status</th>\n            </tr>\n            {{$input.all().map(item => \n                '<tr>' +\n                  '<td>' + (item.json.product_id || 'N/A') + '</td>' +\n                  '<td>' + (item.json.product_name || 'N/A') + '</td>' +\n                  '<td>' + (item.json.current_stock || '0') + '</td>' +\n                  '<td>' + (item.json.status || 'Pending') + '</td>' +\n                '</tr>'\n            ).join('')}}\n        </table>\n\n        <div class=\"btn-container\">\n            <div class=\"btn-text\">📋 Need to update your information or submit a new request?</div>\n            <a href=\"https://form.typeform.com/to/RKW9yOGb\" class=\"intake-btn\" target=\"_blank\">\n                🚀 Complete Intake Form\n            </a>\n        </div>\n\n        <div class=\"footer\">\n            <p>Generated by Manufacturing Planning System</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "520441cc-d939-4e14-84c6-6c7ce05bb741",
+      "name": "Send Intake Form Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -160
+      ],
+      "webhookId": "a34e8420-195a-4e88-a0c3-3564c38d5edb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formId": "RKW9yOGb"
+      },
+      "id": "96da6893-bd5b-4679-9f1b-0dc8cffc41f9",
+      "name": "Typeform Intake Submission",
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -720,
+        64
+      ],
+      "webhookId": "b8d2752b-7b02-4417-bb65-d4f39d1f93d8"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appWS3JufDJ2qJ1j5",
+          "mode": "list",
+          "cachedResultName": "New Client Onboarding Form",
+          "cachedResultUrl": "https://airtable.com/appWS3JufDJ2qJ1j5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblXK4pf6eLINi8HM",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appWS3JufDJ2qJ1j5/tblXK4pf6eLINi8HM"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "First Name": "={{ $json['First name'] }}",
+            "Last Name": "={{ $json['Last name'] }}",
+            "Phone Number": "={{ $json['Phone number'] }}",
+            "Email Address": "={{ $json.Email }}",
+            "Company Name": "={{ $json.Company }}",
+            "Job Title": "={{ $json.Jobtitle }}",
+            "Industry": "={{ $json['What industry are you in?'] }}",
+            "Company Size": "={{ $json['Company Size'] }}",
+            "Services": "={{ $json.Services }}",
+            "Project details": "={{ $json['Tell us about your project or needs'] }}",
+            "Timeline": "={{ $json.Timeline }}",
+            "Budget": "={{ $json.Budget }}",
+            "Referral Source": "={{ $json['Referral Source'] }}",
+            "Additional Info": "={{ $json['Additional Info'] }}",
+            "Contact Method": "={{ $json['Contact Method'] }}",
+            "Best Time": "={{ $json['Best Time'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Technology",
+                  "value": "Technology"
+                },
+                {
+                  "name": "HealthCare",
+                  "value": "HealthCare"
+                },
+                {
+                  "name": "E-Commerce",
+                  "value": "E-Commerce"
+                },
+                {
+                  "name": "Consulting",
+                  "value": "Consulting"
+                },
+                {
+                  "name": "Marketing",
+                  "value": "Marketing"
+                },
+                {
+                  "name": "Finance",
+                  "value": "Finance"
+                },
+                {
+                  "name": "Finance Real Estate",
+                  "value": "Finance Real Estate"
+                },
+                {
+                  "name": "Others",
+                  "value": "Others"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1-10",
+                  "value": "1-10"
+                },
+                {
+                  "name": "11-50",
+                  "value": "11-50"
+                },
+                {
+                  "name": "51-200",
+                  "value": "51-200"
+                },
+                {
+                  "name": "201-500",
+                  "value": "201-500"
+                },
+                {
+                  "name": "500+",
+                  "value": "500+"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Services",
+              "displayName": "Services",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Consulting",
+                  "value": "Consulting"
+                },
+                {
+                  "name": "Strategy",
+                  "value": "Strategy"
+                },
+                {
+                  "name": "Implementation",
+                  "value": "Implementation"
+                },
+                {
+                  "name": "Training",
+                  "value": "Training"
+                },
+                {
+                  "name": "Support",
+                  "value": "Support"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Project details",
+              "displayName": "Project details",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Immediate (within 2 weeks)",
+                  "value": "Immediate (within 2 weeks)"
+                },
+                {
+                  "name": "1 month",
+                  "value": "1 month"
+                },
+                {
+                  "name": " 2-3 months",
+                  "value": " 2-3 months"
+                },
+                {
+                  "name": " 3-6 months",
+                  "value": " 3-6 months"
+                },
+                {
+                  "name": "6+ months",
+                  "value": "6+ months"
+                },
+                {
+                  "name": "not sure",
+                  "value": "not sure"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Under $5K",
+                  "value": "Under $5K"
+                },
+                {
+                  "name": "$5K-$10K",
+                  "value": "$5K-$10K"
+                },
+                {
+                  "name": "$10K-$25K",
+                  "value": "$10K-$25K"
+                },
+                {
+                  "name": "$25K-$50K",
+                  "value": "$25K-$50K"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Referral Source",
+              "displayName": "Referral Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Google Search",
+                  "value": "Google Search"
+                },
+                {
+                  "name": "Social Media",
+                  "value": "Social Media"
+                },
+                {
+                  "name": "Referral",
+                  "value": "Referral"
+                },
+                {
+                  "name": "Event",
+                  "value": "Event"
+                },
+                {
+                  "name": "Email",
+                  "value": "Email"
+                },
+                {
+                  "name": " Other",
+                  "value": " Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Additional Info",
+              "displayName": "Additional Info",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contact Method",
+              "displayName": "Contact Method",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Email",
+                  "value": "Email"
+                },
+                {
+                  "name": "Phone",
+                  "value": "Phone"
+                },
+                {
+                  "name": "Video Call",
+                  "value": "Video Call"
+                },
+                {
+                  "name": "In-person",
+                  "value": "In-person"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Best Time",
+              "displayName": "Best Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Morning (9am-12pm)",
+                  "value": "Morning (9am-12pm)"
+                },
+                {
+                  "name": "Afternoon (12pm-5pm)",
+                  "value": "Afternoon (12pm-5pm)"
+                },
+                {
+                  "name": "Evening (5pm-8pm)",
+                  "value": "Evening (5pm-8pm)"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "97f0c967-1584-4bdd-b578-294be1470942",
+      "name": "Store Client Data",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        64
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "x9NKEFtLTvd3nML7",
+          "name": "Airtable Personal Access Token account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "limitWaitTime": true,
+        "resumeAmount": 7,
+        "resumeUnit": "days",
+        "options": {
+          "webhookSuffix": "contract-signed"
+        }
+      },
+      "id": "01cd5591-dca3-4b99-bc7d-bd4f691d25ad",
+      "name": "Wait for Contract Signature",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        64
+      ],
+      "webhookId": "ab8753ce-f22c-4515-83e1-230b9b347770"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.docuseal.co/submissions/{{ $node['Wait for Contract Signature'].json.body.data.submission_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Auth-Token",
+              "value": "qnfts7G7vv6p6agwWExVAZ3bbimqfoGP11zUHY8Lc9V"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8df9a777-b4c4-4cc5-9086-b4c3ab1b76a1",
+      "name": "Check Contract Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "85b60653-5e2b-447f-b787-3b45dfa96c8a",
+      "name": "Contract Signed Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Store Client Data').item.json.fields[\"Email Address\"] }}",
+        "subject": "Contract Signed - Schedule Your Consultation",
+        "message": "=<h2>Congratulations! Your contract has been signed.</h2>\n\n<p>Hi {{ $('Store Client Data').item.json.fields['First Name'] }},</p>\n\n<p>Thank you for signing your Professional Services Agreement. We're excited to work with you!</p>\n\n<p><strong>Next Step:</strong> Please schedule your first consultation call using the link below:</p>\n\n<p style=\"text-align: center; margin: 30px 0;\">\n    <a href=\"YOUR_CALENDLY_LINK_HERE\" \n       style=\"background-color: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;\">\n        📅 Schedule Your Consultation\n    </a>\n</p>\n\n<p>We look forward to discussing your project and getting started!</p>\n\n<p>Best regards,<br>\n[Your Company Name]</p>",
+        "options": {}
+      },
+      "id": "3097feb9-67cf-44e6-b14e-32343819cc0a",
+      "name": "Send Calendly Link",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        64
+      ],
+      "webhookId": "d6bf5be2-8851-4fcf-9dfa-0df1ed5d6012",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.slackChannel }}"
+        },
+        "text": "=New client onboarded: {{ $json.name }} ({{ $json.email }}) - Contract signed and consultation scheduled!",
+        "otherOptions": {}
+      },
+      "id": "e7aaf70f-e5d1-4a5c-8e58-30e4507a1c35",
+      "name": "Notify Team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        64
+      ],
+      "webhookId": "7826bbec-fa96-4a12-8a50-08093e94d07d",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.docuseal.co/templates/1890972/submissions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Auth-Token",
+              "value": "qnfts7G7vv6p6agwWExVAZ3bbimqfoGP11zUHY8Lc9V"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template_id\": \"1890972\", \n  \"send_email\": true,\n  \"submitters\": [\n    {\n      \"role\": \"Client\",\n      \"email\": \"{{ $json.fields['Email Address'] }}\",\n      \"name\": \"{{ $json.fields['First Name'] }} {{ $json.fields['Last Name'] }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -288,
+        64
+      ],
+      "id": "815c832e-1bf7-4d78-b0fa-83dad9f616bb",
+      "name": "Send DocuSeal Contract"
+    }
+  ],
+  "pinData": {
+    "New Client Signup": [
+      {
+        "json": {
+          "headers": {
+            "host": "asimkhanniazi.app.n8n.cloud",
+            "user-agent": "Tally Webhooks",
+            "content-length": "2647",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "baggage": "sentry-environment=production,sentry-release=d55d160df9b09c932a78a2fb6e163d170a6d3e8f,sentry-public_key=6af4b6673f1648edaa8fef3f2ca43405,sentry-trace_id=6a40b69b2fb7c665fed9eb769b8ed295,sentry-org_id=407628,sentry-sampled=false,sentry-sample_rand=0.12228232347649448,sentry-sample_rate=0.001",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.96.41.187",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "BE",
+            "cf-ray": "98a6c3ff06265678-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sentry-trace": "6a40b69b2fb7c665fed9eb769b8ed295-d0e3c8ed2b96e73e-0",
+            "x-forwarded-for": "34.96.41.187, 172.69.224.219",
+            "x-forwarded-host": "asimkhanniazi.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-46-d85945c6c-4wm6w",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.96.41.187"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "eventId": "ae4ac781-e800-4a23-ba7d-629d34107afc",
+            "eventType": "FORM_RESPONSE",
+            "createdAt": "2025-10-06T17:09:17.199Z",
+            "data": {
+              "responseId": "A792BWN",
+              "submissionId": "A792BWN",
+              "respondentId": "eqq9bvl",
+              "formId": "mVgX4j",
+              "formName": "New Client Onboarding Form",
+              "createdAt": "2025-10-06T17:09:17.000Z",
+              "fields": [
+                {
+                  "key": "question_X4VdKd",
+                  "label": "Full Name",
+                  "type": "INPUT_TEXT",
+                  "value": "Asim Niazi"
+                },
+                {
+                  "key": "question_8ZvV0Y",
+                  "label": "Business Email Address",
+                  "type": "INPUT_EMAIL",
+                  "value": "asimniazi100@gmail.com"
+                },
+                {
+                  "key": "question_0e2zp0",
+                  "label": "Phone Number",
+                  "type": "INPUT_PHONE_NUMBER",
+                  "value": "+923000281455"
+                },
+                {
+                  "key": "question_z7p4a8",
+                  "label": "Company or Organization Name",
+                  "type": "INPUT_TEXT",
+                  "value": "ProSync Industries"
+                },
+                {
+                  "key": "question_5Z6oyP",
+                  "label": "Your Job Title",
+                  "type": "INPUT_TEXT",
+                  "value": "CEO"
+                },
+                {
+                  "key": "question_d9LX5y",
+                  "label": "What industry is your business in?",
+                  "type": "MULTIPLE_CHOICE",
+                  "value": [
+                    "741f4e84-fb11-4a25-b3b1-3954ffa56025"
+                  ],
+                  "options": [
+                    {
+                      "id": "741f4e84-fb11-4a25-b3b1-3954ffa56025",
+                      "text": "Technology & Software"
+                    },
+                    {
+                      "id": "584edbe2-5d08-4ba6-ab60-c9046d63cddf",
+                      "text": "Healthcare & Medical"
+                    },
+                    {
+                      "id": "83e1e3f6-7f8f-4ba4-90da-ac9f6a6b1341",
+                      "text": "Finance & Banking"
+                    },
+                    {
+                      "id": "e348666d-d424-468e-8d28-a50e4541f6ad",
+                      "text": "Manufacturing & Industrial"
+                    },
+                    {
+                      "id": "e54ee3f2-a3ac-4e74-84fb-21fdc1f728e5",
+                      "text": "Retail & E-commerce"
+                    },
+                    {
+                      "id": "cdc2f67f-ae60-4ac1-a324-a283e3290515",
+                      "text": "Real Estate & Construction"
+                    },
+                    {
+                      "id": "0848b83a-055e-426f-84c6-f5192df24067",
+                      "text": "Education & Training"
+                    },
+                    {
+                      "id": "9e188df3-bd9c-4fd8-86c9-ed45a07c21e9",
+                      "text": "Non-profit & Government"
+                    },
+                    {
+                      "id": "82b5c56f-9460-47ca-b9b9-b9e8fc0b5ac9",
+                      "text": "Professional Services"
+                    },
+                    {
+                      "id": "b8ad3499-431f-46ac-b15e-bb3b7c784445",
+                      "text": "Other"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_Y4EXL6",
+                  "label": "Which service do you need?",
+                  "type": "MULTIPLE_CHOICE",
+                  "value": [
+                    "fb87ad81-c1c6-4eb6-b065-9f1c82cbd2ca"
+                  ],
+                  "options": [
+                    {
+                      "id": "fb87ad81-c1c6-4eb6-b065-9f1c82cbd2ca",
+                      "text": "Business Consulting & Strategy"
+                    },
+                    {
+                      "id": "4eea7e1e-1671-4dd0-bb7c-3b6e6278ee84",
+                      "text": "Digital Marketing & SEO"
+                    },
+                    {
+                      "id": "f23d5f58-8e31-46b8-a74c-7c05e5c8f6c4",
+                      "text": "Legal Services & Compliance"
+                    },
+                    {
+                      "id": "57c8678c-503a-44da-9370-f049578ed425",
+                      "text": "Accounting & Financial Planning"
+                    },
+                    {
+                      "id": "fd18e628-924e-4858-b2f7-4577da7e2820",
+                      "text": "IT Support & Cybersecurity"
+                    },
+                    {
+                      "id": "0524dd9e-9349-498c-ae58-a4967f604611",
+                      "text": "HR & Talent Management"
+                    },
+                    {
+                      "id": "a151f82a-7191-46f3-937a-2ca3f6a1165d",
+                      "text": "Project Management"
+                    },
+                    {
+                      "id": "f741ad4b-b656-45de-bee5-f8a55aa8a460",
+                      "text": "Custom Software Development"
+                    },
+                    {
+                      "id": "b699a9a8-29ff-447d-a540-15b606f05215",
+                      "text": "Other (please specify)"
+                    },
+                    {
+                      "id": "f2f70132-ede9-41b5-9944-bd51b5149c9c"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "webhookUrl": "https://asimkhanniazi.app.n8n.cloud/webhook-test/new-client-signup",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Typeform Intake Submission": [
+      {
+        "json": {
+          "First name": "Asim",
+          "Last name": "Niazi",
+          "Phone number": "+923000281455",
+          "Email": "asimniazi100@gmail.com",
+          "Company": "None. ",
+          "Jobtitle": "CEO",
+          "What industry are you in?": "Consulting",
+          "Company Size": "1-10",
+          "Revenue": "Under $100K",
+          "Services": [
+            "Consulting"
+          ],
+          "Tell us about your project or needs": "None.",
+          "Timeline": "Immediate (within 2 weeks)",
+          "Budget": "Under $5K",
+          "Referral Source": "Google Search",
+          "Additional Info": "None.",
+          "Contact Method": "Email",
+          "Best Time": "Morning (9am-12pm)"
+        }
+      }
+    ],
+    "Wait for Contract Signature": [
+      {
+        "json": {
+          "headers": {
+            "host": "asimkhanniazi.app.n8n.cloud",
+            "user-agent": "DocuSeal.com Webhook",
+            "content-length": "1128",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "52.55.183.30",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "98a7c5eed345399d-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "52.55.183.30, 172.70.39.208",
+            "x-forwarded-host": "asimkhanniazi.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-46-d85945c6c-4wm6w",
+            "x-is-trusted": "yes",
+            "x-real-ip": "52.55.183.30"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event_type": "form.viewed",
+            "timestamp": "2025-10-06T20:05:22.261Z",
+            "data": {
+              "id": 4707151,
+              "submission_id": 3567249,
+              "email": "asimniazi100@gmail.com",
+              "phone": null,
+              "name": null,
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+              "ip": "59.103.246.18",
+              "sent_at": null,
+              "opened_at": "2025-10-06T20:05:22.239Z",
+              "completed_at": null,
+              "declined_at": null,
+              "created_at": "2025-10-06T20:05:21.590Z",
+              "updated_at": "2025-10-06T20:05:22.239Z",
+              "external_id": null,
+              "metadata": {},
+              "status": "opened",
+              "application_key": null,
+              "decline_reason": null,
+              "role": "First Party",
+              "preferences": {
+                "send_email": true
+              },
+              "values": [],
+              "documents": [],
+              "audit_log_url": null,
+              "submission_url": "https://docuseal.com/e/Jtfs75WWNrDro9",
+              "template": {
+                "id": 1892217,
+                "name": "PROFESSIONAL SERVICES AGREEMENT",
+                "external_id": null,
+                "created_at": "2025-10-06T19:48:18.591Z",
+                "updated_at": "2025-10-06T19:54:39.132Z",
+                "folder_name": "Default"
+              },
+              "submission": {
+                "id": 3567249,
+                "audit_log_url": null,
+                "combined_document_url": null,
+                "status": "pending",
+                "url": "https://docuseal.com/e/Jtfs75WWNrDro9",
+                "variables": {},
+                "created_at": "2025-10-06T20:05:21.588Z"
+              }
+            }
+          },
+          "webhookUrl": "https://asimkhanniazi.app.n8n.cloud/webhook-test/contract-signed",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "New Client Signup": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Send Intake Form Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typeform Intake Submission": {
+      "main": [
+        [
+          {
+            "node": "Store Client Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Client Data": {
+      "main": [
+        [
+          {
+            "node": "Send DocuSeal Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Contract Signature": {
+      "main": [
+        [
+          {
+            "node": "Check Contract Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Contract Status": {
+      "main": [
+        [
+          {
+            "node": "Contract Signed Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contract Signed Check": {
+      "main": [
+        [
+          {
+            "node": "Send Calendly Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Calendly Link": {
+      "main": [
+        [
+          {
+            "node": "Notify Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send DocuSeal Contract": {
+      "main": [
+        [
+          {
+            "node": "Wait for Contract Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b195c9d3-9ba4-4c63-8133-b27cc4003564",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "bT3zGNOy2U6c5Azi",
+  "tags": []
+}

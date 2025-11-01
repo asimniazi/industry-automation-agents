@@ -1,0 +1,632 @@
+{
+  "name": "Healthcare - Appointment Scheduling Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "afed3a2a-0444-4db3-8e7b-a96e7812b1dc",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        32
+      ],
+      "id": "e231479f-7bee-4c1c-a095-d10c0fd30a06",
+      "name": "Receives appointment booking requests",
+      "webhookId": "afed3a2a-0444-4db3-8e7b-a96e7812b1dc"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Healthcare Appointment Form Data Extraction\n// This code extracts and formats all form fields from Tally webhook\n\n// Get the input data from the webhook\nconst inputData = $input.all()[0].json;\n\n// Extract form fields safely\nconst fields = inputData.body?.data?.fields || [];\n\n// Helper function to get field value safely\nfunction getFieldValue(index) {\n  if (fields[index] && fields[index].value !== undefined) {\n    const field = fields[index];\n    \n    // Handle array values (some Tally fields return arrays)\n    if (Array.isArray(field.value)) {\n      const valueId = field.value[0];\n      \n      // If field has options, find the text for the selected ID\n      if (field.options && field.options.length > 0) {\n        const selectedOption = field.options.find(option => option.id === valueId);\n        return selectedOption ? selectedOption.text : valueId;\n      }\n      \n      return valueId || '';\n    }\n    \n    // For single values, check if it's an ID that needs text lookup\n    if (field.options && field.options.length > 0) {\n      const selectedOption = field.options.find(option => option.id === field.value);\n      return selectedOption ? selectedOption.text : field.value;\n    }\n    \n    return field.value;\n  }\n  return '';\n}\n\n// Extract all form data\nconst fullName = getFieldValue(0);\nconst email = getFieldValue(1);\nconst phoneNumber = getFieldValue(2);\nconst dateOfBirth = getFieldValue(3);\nconst appointmentDate = getFieldValue(4);\nconst preferredTime = getFieldValue(5);\nconst serviceType = getFieldValue(6);\nconst durationNeeded = getFieldValue(7);\n\n// Process name components\nconst nameParts = fullName.trim().split(' ');\nconst firstName = nameParts[0] || '';\nconst lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';\nconst middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '';\n\n// Generate unique appointment ID\nconst timestamp = Date.now();\nconst randomNum = Math.floor(Math.random() * 1000);\nconst initials = firstName.charAt(0) + lastName.charAt(0);\nconst appointmentId = `APT-${initials}-${timestamp}-${randomNum}`;\n\n// Generate confirmation code\nconst confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();\n\n// Format date and time\nlet appointmentStartISO = '';\nlet appointmentEndISO = '';\nlet dateReadable = '';\n\ntry {\n  if (appointmentDate && preferredTime) {\n    const appointmentDateTime = new Date(`${appointmentDate} ${preferredTime}`);\n    appointmentStartISO = appointmentDateTime.toISOString();\n    \n    // Calculate end time (default 30 minutes or use duration)\n    const duration = parseInt(durationNeeded) || 30;\n    const endDateTime = new Date(appointmentDateTime.getTime() + duration * 60000);\n    appointmentEndISO = endDateTime.toISOString();\n    \n    // Human readable date\n    dateReadable = appointmentDateTime.toLocaleDateString('en-US', {\n      weekday: 'long',\n      year: 'numeric',\n      month: 'long',\n      day: 'numeric'\n    });\n  }\n} catch (error) {\n  console.log('Date parsing error:', error);\n  // Fallback to current date\n  const now = new Date();\n  appointmentStartISO = now.toISOString();\n  appointmentEndISO = new Date(now.getTime() + 30 * 60000).toISOString();\n  dateReadable = now.toLocaleDateString('en-US');\n}\n\n// Validate data\nconst emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\nconst phoneValid = phoneNumber.length >= 10;\nconst requiredFieldsComplete = !!(fullName && email && phoneNumber);\n\n// Create output object\nconst output = {\n  // Basic Information\n  full_name: fullName,\n  first_name: firstName,\n  last_name: lastName,\n  middle_name: middleName,\n  email: email.toLowerCase().trim(),\n  phone_number: phoneNumber,\n  date_of_birth: dateOfBirth,\n  \n  // Appointment Details\n  appointment_date: appointmentDate,\n  preferred_time: preferredTime,\n  service_type: serviceType,\n  duration_needed: durationNeeded || '30',\n  \n  // Generated Fields\n  appointment_id: appointmentId,\n  confirmation_code: confirmationCode,\n  appointment_start_iso: appointmentStartISO,\n  appointment_end_iso: appointmentEndISO,\n  \n  // Display Formats\n  date_readable: dateReadable,\n  appointment_title: `Appointment - ${fullName} - ${serviceType || 'Consultation'}`,\n  appointment_datetime: `${appointmentDate} ${preferredTime}`,\n  \n  // System Fields\n  status: 'scheduled',\n  source: 'tally_form',\n  form_id: inputData.body?.data?.formId || '',\n  created_at: new Date().toISOString(),\n  timezone: 'Asia/Karachi',\n  \n  // Validation Results\n  email_valid: emailValid,\n  phone_valid: phoneValid,\n  required_fields_complete: requiredFieldsComplete,\n  \n  // Contact Preferences (if you have these fields, adjust indices)\n  send_email: true,\n  send_sms: true,\n  \n  // Debug Information\n  debug_fields_count: fields.length,\n  debug_raw_data: inputData.body?.data || {}\n};\n\n// Return the processed data\nreturn [output];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        32
+      ],
+      "id": "f05a89d8-e156-4c94-87e8-c048939a44ae",
+      "name": "Process Form Data"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "asimniazi100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "asimniazi100@gmail.com"
+        },
+        "start": "={{ $json.appointment_start_iso }}",
+        "end": "={{ $json.appointment_end_iso }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $json.email }}"
+          ],
+          "color": "4",
+          "description": "={{ \"Patient: \" + $json.full_name + \"\\nService: \" + $json.service_type + \"\\nPhone: \" + $json.phone_number + \"\\nEmail: \" + $json.email + \"\\nConfirmation Code: \" + $json.confirmation_code }}",
+          "location": "Healthcare Clinic, Main Street, Your City, Pakistan",
+          "sendUpdates": "all",
+          "summary": "={{ $json.appointment_title }}",
+          "visibility": "default"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        32
+      ],
+      "id": "9446658c-e57e-46c8-bdbb-b4b9bb868435",
+      "name": "Create Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "zWO8k15tmQBF42so",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.attendees[0].email }}",
+        "subject": "={{ \"Appointment Confirmed - \" + $('Process Form Data').item.json.date_readable + \" at \" + $('Process Form Data').item.json.preferred_time }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;\">   <h2 style=\"color: #2c5aa0; text-align: center;\">Appointment Confirmation</h2>      <p>Dear {{ $('Process Form Data').item.json.first_name }},</p>      <p>Your appointment has been successfully confirmed. Here are your appointment details:</p>      <div style=\"background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;\">     <h3 style=\"color: #333; margin-top: 0;\">Appointment Details</h3>     <p><strong>Date:</strong> {{ $('Process Form Data').item.json.date_readable }}</p>     <p><strong>Time:</strong> {{ $('Process Form Data').item.json.preferred_time }}</p>     <p><strong>Service:</strong> {{ $('Process Form Data').item.json.service_type }}</p>     <p><strong>Duration:</strong> {{ $('Process Form Data').item.json.duration_needed }} minutes</p>     <p><strong>Confirmation Code:</strong> {{ $('Process Form Data').item.json.confirmation_code }}</p>   </div>      <div style=\"background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0;\">     <h3 style=\"color: #333; margin-top: 0;\">Clinic Information</h3>     <p><strong>Location:</strong> Healthcare Clinic, Main Street, Your City, Pakistan</p>     <p><strong>Phone:</strong> +92-XXX-XXXXXXX</p>   </div>      <div style=\"background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;\">     <h3 style=\"color: #856404; margin-top: 0;\">Important Reminders</h3>     <ul style=\"color: #856404;\">       <li>Please arrive 15 minutes before your appointment time</li>       <li>Bring a valid ID and insurance card</li>       <li>If you need to cancel or reschedule, please call us at least 24 hours in advance</li>     </ul>   </div>      <div style=\"text-align: center; margin: 30px 0;\">     <p>A calendar invitation has also been sent to your email.</p>   </div>      <div style=\"text-align: center; border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px;\">     <p style=\"color: #666; font-size: 14px;\">       Thank you for choosing Healthcare Clinic<br>       We look forward to seeing you!     </p>   </div> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        32
+      ],
+      "id": "619f142b-74e3-4b5f-a7ff-c81cbd922932",
+      "name": "Send Email Confirmation",
+      "webhookId": "1365ebae-cb63-4826-9bdd-335dce12b5aa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU",
+          "mode": "list",
+          "cachedResultName": "Healthcare Appointments Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "appointment_id": "={{ $('Process Form Data').item.json.appointment_id }}",
+            "full_name": "={{ $('Process Form Data').item.json.full_name }}",
+            "first_name": "={{ $('Process Form Data').item.json.first_name }}",
+            "last_name": "={{ $('Process Form Data').item.json.last_name }}",
+            "email": "={{ $('Process Form Data').item.json.email }}",
+            "phone_number": "={{ $('Process Form Data').item.json.phone_number }}",
+            "appointment_date": "={{ $('Process Form Data').item.json.appointment_date }}",
+            "preferred_time": "={{ $('Process Form Data').item.json.preferred_time }}",
+            "service_type": "={{ $('Process Form Data').item.json.service_type }}",
+            "confirmation_code": "={{ $('Process Form Data').item.json.confirmation_code }}",
+            "status": "={{ $('Process Form Data').item.json.status }}",
+            "created_at": "={{ $('Process Form Data').item.json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "appointment_id",
+              "displayName": "appointment_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointment_date",
+              "displayName": "appointment_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "preferred_time",
+              "displayName": "preferred_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service_type",
+              "displayName": "service_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confirmation_code",
+              "displayName": "confirmation_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        512,
+        32
+      ],
+      "id": "978b3436-3c46-40a9-987d-52848228db9c",
+      "name": "Healthcare Appointments Database",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        352
+      ],
+      "id": "30c2930f-ef82-4745-82a4-b8f1e531e37a",
+      "name": "Schedule 24h Reminder"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU",
+          "mode": "list",
+          "cachedResultName": "Healthcare Appointments Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yxr087S2zcDVdEdhAxUBt04wJkSL4rUOgcii-qVNmAU/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -112,
+        352
+      ],
+      "id": "74c537dc-e6bd-43b8-a256-e6f3f2e25c6f",
+      "name": "Read Patient Appointments",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45dbb050-d979-4cd6-8629-01687083b792",
+              "name": "appointment_id",
+              "value": "={{ $json.appointment_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a63ec108-392d-4e6b-b87b-609ab9523c9b",
+              "name": "full_name",
+              "value": "={{ $json.full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "9f634af8-d7f5-4ba3-8bd7-468d09de3ccc",
+              "name": "first_name",
+              "value": "={{ $json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "61ca4c3c-2efa-486f-a20c-0632c574d6b3",
+              "name": "last_name",
+              "value": "={{ $json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ad599567-ab56-44e8-937d-2dde519c016e",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "8ee8fdea-cfce-4708-adad-7a49962bc8ca",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "c73fd0cc-19bb-4016-b315-a1442a9a6e73",
+              "name": "appointment_date",
+              "value": "={{ $json.appointment_date }}",
+              "type": "string"
+            },
+            {
+              "id": "df0b9b09-f0e9-4a75-a48a-457e076b8361",
+              "name": "preferred_time",
+              "value": "={{ $json.preferred_time }}",
+              "type": "string"
+            },
+            {
+              "id": "a3d7c5e4-f3e0-447b-9893-0ec3da58d21c",
+              "name": "service_type",
+              "value": "={{ $json.service_type }}",
+              "type": "string"
+            },
+            {
+              "id": "c3c8ba6c-58f3-4955-b33e-e43af6b7865b",
+              "name": "confirmation_code",
+              "value": "={{ $json.confirmation_code }}",
+              "type": "string"
+            },
+            {
+              "id": "2358dc13-efa4-48d7-abab-b11d0ce89c26",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "13d34127-8df4-4de2-a289-919a61317a4b",
+              "name": "created_at",
+              "value": "={{ $json.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "66b96b2b-0235-4fd1-8bcb-11ef89b12e43",
+              "name": "appointmentDateTime",
+              "value": "={{ $json[\"appointment_date\"] + \" \" + $json[\"preferred_time\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        352
+      ],
+      "id": "0786f362-115e-4389-b15d-4081a315a992",
+      "name": "Format Appointment DateTime"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "66a57b24-cdf4-43e1-8942-429d475dc5c3",
+              "leftValue": "={{ $json[\"appointmentDateTime\"] }}",
+              "rightValue": "={{ $now }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            },
+            {
+              "id": "ad37fb54-a625-498c-8a8a-e33643d03d89",
+              "leftValue": "={{ $json[\"appointmentDateTime\"] }}",
+              "rightValue": "={{ $now.plus({ hours: 24 }) }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "beforeOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        352
+      ],
+      "id": "a1d1b0b8-a30d-4bac-a686-835912978b9b",
+      "name": "Check 24h Window"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ \"Reminder: Appointment on \" + $json.appointment_date + \" at \" + $json.preferred_time }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;\">   <h2 style=\"color: #e74c3c; text-align: center;\">Appointment Reminder</h2>      <p>Dear {{ $json.first_name }},</p>      <p>This is a friendly reminder about your upcoming appointment:</p>      <div style=\"background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;\">     <h3 style=\"color: #856404; margin-top: 0;\">Appointment Details</h3>     <p><strong>Date:</strong> {{ $json.appointment_date }}</p>     <p><strong>Time:</strong> {{ $json.preferred_time }}</p>     <p><strong>Service:</strong> {{ $json.service_type }}</p>     <p><strong>Confirmation Code:</strong> {{ $json.confirmation_code }}</p>   </div>      <div style=\"background-color: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0;\">     <h3 style=\"color: #155724; margin-top: 0;\">Important Reminders</h3>     <ul style=\"color: #155724;\">       <li>Please arrive 15 minutes early</li>       <li>Bring your ID and insurance card</li>       <li>If you need to cancel, please call us immediately</li>     </ul>   </div>      <div style=\"text-align: center; background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;\">     <h3 style=\"color: #333; margin-top: 0;\">Contact Information</h3>     <p><strong>Healthcare Clinic</strong><br>     Main Street, Your City, Pakistan<br>     Phone: +923000281455</p>   </div>      <div style=\"text-align: center; margin: 30px 0;\">     <p style=\"color: #666;\">We look forward to seeing you!</p>   </div> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        512,
+        256
+      ],
+      "id": "20d6d74c-a008-4dae-b79c-8664ceb6478e",
+      "name": "Send Reminder Email",
+      "webhookId": "fbba6d59-7498-4cf2-b9a5-e982c960b723",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(\"These appointments don't need reminders yet\");\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        448
+      ],
+      "id": "e211f3b3-cda2-4e99-89a6-ebfe0404a205",
+      "name": "Log No Reminder",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        720,
+        32
+      ],
+      "id": "90f19d8f-ba9c-4df6-9954-ba47c622ac4f",
+      "name": "Send SMS Reminder",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receives appointment booking requests": {
+      "main": [
+        [
+          {
+            "node": "Process Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Form Data": {
+      "main": [
+        [
+          {
+            "node": "Create Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Appointment": {
+      "main": [
+        [
+          {
+            "node": "Send Email Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Healthcare Appointments Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule 24h Reminder": {
+      "main": [
+        [
+          {
+            "node": "Read Patient Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Patient Appointments": {
+      "main": [
+        [
+          {
+            "node": "Format Appointment DateTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Appointment DateTime": {
+      "main": [
+        [
+          {
+            "node": "Check 24h Window",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check 24h Window": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Healthcare Appointments Database": {
+      "main": [
+        [
+          {
+            "node": "Send SMS Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b34e8bda-a468-4003-9c0f-6f6e6bb1a8f3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "Jf09b4St9j4BO6XB",
+  "tags": []
+}

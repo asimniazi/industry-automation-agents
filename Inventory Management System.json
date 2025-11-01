@@ -1,0 +1,298 @@
+{
+  "name": "Inventory Management System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        -48
+      ],
+      "id": "ef151ff1-08c5-476a-8127-2f2c9036fe25",
+      "name": "Daily Inventory Check1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.jsonbin.io/v3/b/68e3cc6fae596e708f081dee/latest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-MASTER-KEY",
+              "value": "$2a$10$nzv/WxKH8kdoAPkDbvLuye.naPd3jMEBrcqaejLrvFQ6u5EwSvclO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        -48
+      ],
+      "id": "1336a8d4-5f50-4e0c-9d6f-157f706da389",
+      "name": "Fetch WooCommerce Products1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function Node: Filter Low Stock Items\n// This code will process the HTTP Request output and filter low-stock items\n\n// Extract inventory data from the HTTP Request response\n// Note: The data comes wrapped in an array, so we access items[0].json.record.inventory\nconst inventoryData = items[0].json.record.inventory;\n\n// Filter items where current stock is below threshold\nconst lowStockItems = inventoryData.filter(item => {\n  return item.currentStock < item.threshold;\n});\n\n// Add calculated fields for each low stock item\nconst processedItems = lowStockItems.map(item => ({\n  json: {\n    ...item,\n    stockShortage: item.threshold - item.currentStock,\n    reorderQuantity: item.threshold * 2,\n    urgencyLevel: item.currentStock <= 3 ? 'Critical' : 'Low',\n    estimatedValue: (item.threshold * 2) * item.cost,\n    actionRequired: item.currentStock <= 3 ? 'Order Today' : 'Order within 7 days',\n    reorderDate: new Date().toISOString().split('T')[0],\n    profitMargin: ((item.price - item.cost) / item.price * 100).toFixed(2) + '%'\n  }\n}));\n\n// Log the results for debugging\nconsole.log(`Total items processed: ${inventoryData.length}`);\nconsole.log(`Low stock items found: ${lowStockItems.length}`);\nconsole.log(`Critical items: ${processedItems.filter(item => item.json.urgencyLevel === 'Critical').length}`);\n\n// Return the processed low stock items\nreturn processedItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "16fce03e-7320-4af8-8a1a-548a5891a695",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "592420d5-29fa-4f72-9637-0eca203c84f5",
+              "name": "supplierEmail",
+              "value": "={{$json.supplierEmail}}",
+              "type": "string"
+            },
+            {
+              "id": "8ac71051-4888-4bf3-8ca7-10cc0925d0d6",
+              "name": "supplierName",
+              "value": "={{$json.supplierName}}",
+              "type": "string"
+            },
+            {
+              "id": "459eee52-c798-4763-beb8-7d2e5fe0eaa8",
+              "name": "subject",
+              "value": "={{$json.urgencyLevel}} Stock Alert: {{$json.productName}}",
+              "type": "string"
+            },
+            {
+              "id": "1e7229ee-7f68-43fe-94c9-7721d26a08ef",
+              "name": "emailBody",
+              "value": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Inventory Reorder Request</title>\n    <style>\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 600px;\n            margin: 0 auto;\n            padding: 20px;\n            background-color: #f4f4f4;\n        }\n        .email-container {\n            background: white;\n            border-radius: 10px;\n            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n            overflow: hidden;\n        }\n        .header {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 30px;\n            text-align: center;\n        }\n        .header h1 {\n            margin: 0;\n            font-size: 24px;\n            font-weight: 600;\n        }\n        .urgency-badge {\n            display: inline-block;\n            padding: 5px 15px;\n            border-radius: 20px;\n            font-size: 12px;\n            font-weight: bold;\n            margin-top: 10px;\n        }\n        .critical {\n            background-color: #ff4757;\n            color: white;\n        }\n        .low {\n            background-color: #ffa502;\n            color: white;\n        }\n        .content {\n            padding: 30px;\n        }\n        .section {\n            margin-bottom: 25px;\n            padding: 20px;\n            border-left: 4px solid #667eea;\n            background-color: #f8f9fa;\n            border-radius: 0 8px 8px 0;\n        }\n        .section h3 {\n            margin: 0 0 15px 0;\n            color: #667eea;\n            font-size: 16px;\n            display: flex;\n            align-items: center;\n        }\n        .section h3 .icon {\n            margin-right: 8px;\n            font-size: 18px;\n        }\n        .detail-grid {\n            display: grid;\n            grid-template-columns: 1fr 1fr;\n            gap: 10px;\n            margin-top: 10px;\n        }\n        .detail-item {\n            display: flex;\n            justify-content: space-between;\n            padding: 8px 0;\n            border-bottom: 1px solid #eee;\n        }\n        .detail-label {\n            font-weight: 600;\n            color: #555;\n        }\n        .detail-value {\n            color: #333;\n            font-weight: 500;\n        }\n        .highlight {\n            background-color: #fff3cd;\n            padding: 15px;\n            border-radius: 8px;\n            border-left: 4px solid #ffc107;\n            margin: 15px 0;\n        }\n        .action-buttons {\n            text-align: center;\n            margin: 25px 0;\n        }\n        .btn {\n            display: inline-block;\n            padding: 12px 25px;\n            margin: 0 10px;\n            border-radius: 6px;\n            text-decoration: none;\n            font-weight: 600;\n            transition: all 0.3s ease;\n        }\n        .btn-primary {\n            background-color: #667eea;\n            color: white;\n        }\n        .btn-primary:hover {\n            background-color: #5a67d8;\n            transform: translateY(-2px);\n        }\n        .btn-secondary {\n            background-color: #6c757d;\n            color: white;\n        }\n        .checklist {\n            background-color: #e8f5e8;\n            padding: 20px;\n            border-radius: 8px;\n            border-left: 4px solid #28a745;\n        }\n        .checklist h4 {\n            margin: 0 0 10px 0;\n            color: #28a745;\n        }\n        .checklist ul {\n            margin: 0;\n            padding-left: 20px;\n        }\n        .checklist li {\n            margin: 5px 0;\n        }\n        .footer {\n            background-color: #f8f9fa;\n            padding: 20px;\n            text-align: center;\n            border-top: 1px solid #eee;\n            font-size: 12px;\n            color: #666;\n        }\n        .company-logo {\n            width: 50px;\n            height: 50px;\n            background-color: white;\n            border-radius: 50%;\n            display: inline-flex;\n            align-items: center;\n            justify-content: center;\n            margin-bottom: 10px;\n            font-size: 24px;\n        }\n        @media (max-width: 600px) {\n            .detail-grid {\n                grid-template-columns: 1fr;\n            }\n            .btn {\n                display: block;\n                margin: 10px 0;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"email-container\">\n        <div class=\"header\">\n            <div class=\"company-logo\">📦</div>\n            <h1>Inventory Reorder Request</h1>\n            <div class=\"urgency-badge {{$json.urgencyLevel === 'Critical' ? 'critical' : 'low'}}\">\n                {{$json.urgencyLevel}} Priority\n            </div>\n        </div>\n\n        <div class=\"content\">\n            <p>Dear <strong>{{$json.supplierName}}</strong> Team,</p>\n            \n            <p>We hope this message finds you well. We need to place an urgent reorder for one of our products that has fallen below our safety stock threshold.</p>\n\n            <div class=\"section\">\n                <h3><span class=\"icon\">🔍</span> Product Details</h3>\n                <div class=\"detail-grid\">\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Product Name:</span>\n                        <span class=\"detail-value\">{{$json.productName}}</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">SKU:</span>\n                        <span class=\"detail-value\">{{$json.sku}}</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Current Stock:</span>\n                        <span class=\"detail-value\">{{$json.currentStock}} units</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Reorder Threshold:</span>\n                        <span class=\"detail-value\">{{$json.threshold}} units</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Stock Shortage:</span>\n                        <span class=\"detail-value\" style=\"color: #dc3545; font-weight: bold;\">{{$json.stockShortage}} units</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Category:</span>\n                        <span class=\"detail-value\">{{$json.category}}</span>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"highlight\">\n                <strong>⚠️ {{$json.actionRequired}}</strong> - This item requires immediate attention due to low stock levels.\n            </div>\n\n            <div class=\"section\">\n                <h3><span class=\"icon\">📋</span> Order Request</h3>\n                <div class=\"detail-grid\">\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Suggested Quantity:</span>\n                        <span class=\"detail-value\" style=\"color: #28a745; font-weight: bold;\">{{$json.reorderQuantity}} units</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Estimated Value:</span>\n                        <span class=\"detail-value\" style=\"color: #28a745; font-weight: bold;\">${{$json.estimatedValue}}</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Unit Cost:</span>\n                        <span class=\"detail-value\">${{$json.cost}}</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Selling Price:</span>\n                        <span class=\"detail-value\">${{$json.price}}</span>\n                    </div>\n                    <div class=\"detail-item\">\n                        <span class=\"detail-label\">Profit Margin:</span>\n                        <span class=\"detail-value\">{{$json.profitMargin}}</span>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"section\">\n                <h3><span class=\"icon\">📍</span> Delivery Information</h3>\n                <div class=\"detail-item\">\n                    <span class=\"detail-label\">Warehouse Location:</span>\n                    <span class=\"detail-value\">{{$json.location}}</span>\n                </div>\n                <div class=\"detail-item\">\n                    <span class=\"detail-label\">Last Restocked:</span>\n                    <span class=\"detail-value\">{{$json.lastRestocked}}</span>\n                </div>\n                <div class=\"detail-item\">\n                    <span class=\"detail-label\">Reorder Date:</span>\n                    <span class=\"detail-value\">{{$json.reorderDate}}</span>\n                </div>\n            </div>\n\n            <div class=\"checklist\">\n                <h4>📝 Please Confirm the Following:</h4>\n                <ul>\n                    <li>✅ Availability of requested quantity ({{$json.reorderQuantity}} units)</li>\n                    <li>✅ Expected delivery date and timeline</li>\n                    <li>✅ Current pricing and any volume discounts</li>\n                    <li>✅ Minimum order requirements or constraints</li>\n                    <li>✅ Payment terms and conditions</li>\n                </ul>\n            </div>\n\n            <div class=\"action-buttons\">\n                <a href=\"mailto:inventory@techstore.com?subject=Re: {{$json.sku}} Reorder Confirmation\" class=\"btn btn-primary\">\n                    📧 Confirm Order\n                </a>\n                <a href=\"mailto:inventory@techstore.com?subject=Re: {{$json.sku}} Questions\" class=\"btn btn-secondary\">\n                    ❓ Ask Questions\n                </a>\n            </div>\n\n            <p>Thank you for your continued partnership. We look forward to your prompt response to ensure we maintain adequate inventory levels for our customers.</p>\n\n            <p>Best regards,<br>\n            <strong>TechStore Pro Inventory Management System</strong><br>\n            📧 inventory@techstore.com<br>\n            📞 +1-555-TECHSTORE</p>\n        </div>\n\n        <div class=\"footer\">\n            <p>This is an automated message generated by our inventory management system.</p>\n            <p>© 2024 TechStore Pro. All rights reserved.</p>\n            <p style=\"font-size: 10px; color: #999;\">\n                If you have any questions about this order, please reply to this email or contact our procurement team.\n            </p>\n        </div>\n    </div>\n\n    <script>\n        // Add some interactivity for email clients that support JavaScript\n        document.addEventListener('DOMContentLoaded', function() {\n            // Highlight critical items\n            const urgencyBadge = document.querySelector('.urgency-badge');\n            if (urgencyBadge && urgencyBadge.textContent.includes('Critical')) {\n                urgencyBadge.style.animation = 'pulse 2s infinite';\n            }\n            \n            // Add hover effects to buttons\n            const buttons = document.querySelectorAll('.btn');\n            buttons.forEach(button => {\n                button.addEventListener('mouseenter', function() {\n                    this.style.transform = 'translateY(-2px)';\n                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';\n                });\n                \n                button.addEventListener('mouseleave', function() {\n                    this.style.transform = 'translateY(0)';\n                    this.style.boxShadow = 'none';\n                });\n            });\n        });\n        \n        // Add pulse animation for critical items\n        const style = document.createElement('style');\n        style.textContent = `\n            @keyframes pulse {\n                0% { transform: scale(1); }\n                50% { transform: scale(1.05); }\n                100% { transform: scale(1); }\n            }\n        `;\n        document.head.appendChild(style);\n    </script>\n</body>\n</html>",
+              "type": "string"
+            },
+            {
+              "id": "593d85f9-9068-4d66-a26a-ae212197ac59",
+              "name": "productData",
+              "value": "={{$json}}",
+              "type": "string"
+            },
+            {
+              "id": "b038a2b1-5048-415a-a0f0-281c23b3ab96",
+              "name": "priority",
+              "value": "={{$json.urgencyLevel === \"Critical\" ? \"high\" : \"normal\"}}",
+              "type": "string"
+            },
+            {
+              "id": "2bf72047-b885-44b6-a1d3-d022080b4d66",
+              "name": "emailType",
+              "value": "supplier_reorder_notification",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -48
+      ],
+      "id": "085a49c2-0b4f-4727-8bb4-2ebafa585c83",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json.supplierEmail}}",
+        "subject": "={{$json.subject}}",
+        "message": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        -48
+      ],
+      "id": "6847bcf2-7f6c-4824-8ccb-b96abd01c7fc",
+      "name": "Send Supplier Notifications1",
+      "webhookId": "d49d50f5-9da8-438c-9884-3a349e8d30a1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get original data from the fetch node (using correct node name from your list)\nconst originalData = $('Fetch WooCommerce Products1').first().json.record;\nconst processedItems = $('Code in JavaScript1').all();\n\n// Create mapping of processed items with reorder status\nconst processedMap = {};\nprocessedItems.forEach(item => {\n  processedMap[item.json.sku] = {\n    reorderStatus: \"pending\",\n    emailSent: true,\n    lastEmailSent: new Date().toISOString(),\n    reorderQuantity: item.json.reorderQuantity,\n    urgencyLevel: item.json.urgencyLevel,\n    supplierNotified: item.json.supplierEmail,\n    actionRequired: item.json.actionRequired,\n    estimatedValue: item.json.estimatedValue\n  };\n});\n\n// Update inventory items with reorder status\nconst updatedInventory = originalData.inventory.map(item => {\n  if (processedMap[item.sku]) {\n    return {\n      ...item,\n      ...processedMap[item.sku]\n    };\n  }\n  return item;\n});\n\n// Create complete updated data structure\nconst updatedData = {\n  ...originalData,\n  inventory: updatedInventory,\n  lastProcessed: new Date().toISOString(),\n  workflowStats: {\n    totalItems: originalData.inventory.length,\n    lowStockItems: processedItems.length,\n    criticalItems: processedItems.filter(item => item.json.urgencyLevel === 'Critical').length,\n    emailsSent: processedItems.length,\n    totalReorderValue: processedItems.reduce((sum, item) => sum + item.json.estimatedValue, 0)\n  }\n};\n\n// Return the updated data for JSONBin\nreturn [{ json: updatedData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -48
+      ],
+      "id": "b5b9f7a8-e19f-46d8-bb67-374253b9736e",
+      "name": "Consolidate Inventory Data"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.jsonbin.io/v3/b/68e3cc6fae596e708f081dee",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Master-Key",
+              "value": "$2a$10$nzv/WxKH8kdoAPkDbvLuye.naPd3jMEBrcqaejLrvFQ6u5EwSvclO"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        -48
+      ],
+      "id": "6c0589bd-fa93-4b8e-9555-d01ef365fabd",
+      "name": "Persist Changes"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get workflow execution data\nconst originalData = $('Fetch WooCommerce Products1').first().json.record;\nconst processedItems = $('Code in JavaScript1').all();\nconst emailResults = $('Send Supplier Notifications1').all();\nconst updateResult = $('Persist Changes').first().json;\n\n// Create comprehensive report\nconst report = {\n  executionTimestamp: new Date().toISOString(),\n  executionDate: new Date().toDateString(),\n  \n  // Inventory Summary\n  inventorySummary: {\n    totalProducts: originalData.inventory.length,\n    lowStockItems: processedItems.length,\n    normalStockItems: originalData.inventory.length - processedItems.length,\n    criticalItems: processedItems.filter(item => item.json.urgencyLevel === 'Critical').length,\n    lowPriorityItems: processedItems.filter(item => item.json.urgencyLevel === 'Low').length\n  },\n  \n  // Financial Impact\n  financialImpact: {\n    totalReorderValue: processedItems.reduce((sum, item) => sum + item.json.estimatedValue, 0),\n    averageReorderValue: processedItems.length > 0 ? \n      processedItems.reduce((sum, item) => sum + item.json.estimatedValue, 0) / processedItems.length : 0,\n    highestValueReorder: Math.max(...processedItems.map(item => item.json.estimatedValue)),\n    currency: \"USD\"\n  },\n  \n  // Email Notifications\n  emailNotifications: {\n    totalEmailsSent: emailResults.length,\n    successfulDeliveries: emailResults.filter(email => email.json.id).length,\n    uniqueSuppliers: [...new Set(processedItems.map(item => item.json.supplierEmail))],\n    supplierCount: [...new Set(processedItems.map(item => item.json.supplierEmail))].length\n  },\n  \n  // Critical Items Details\n  criticalItems: processedItems\n    .filter(item => item.json.urgencyLevel === 'Critical')\n    .map(item => ({\n      product: item.json.productName,\n      sku: item.json.sku,\n      currentStock: item.json.currentStock,\n      threshold: item.json.threshold,\n      supplier: item.json.supplierName,\n      reorderValue: item.json.estimatedValue\n    })),\n  \n  // System Status\n  systemStatus: {\n    workflowStatus: \"completed\",\n    dataUpdateStatus: updateResult ? \"success\" : \"failed\",\n    nextScheduledRun: \"Tomorrow 6:00 AM\",\n    lastProcessed: new Date().toISOString()\n  }\n};\n\nconsole.log(\"=== INVENTORY MANAGEMENT DAILY REPORT ===\");\nconsole.log(`Execution Date: ${report.executionDate}`);\nconsole.log(`Low Stock Items Found: ${report.inventorySummary.lowStockItems}`);\nconsole.log(`Critical Items: ${report.inventorySummary.criticalItems}`);\nconsole.log(`Total Reorder Value: $${report.financialImpact.totalReorderValue}`);\nconsole.log(`Emails Sent: ${report.emailNotifications.totalEmailsSent}`);\nconsole.log(`Suppliers Notified: ${report.emailNotifications.supplierCount}`);\n\nreturn [{ json: report }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -48
+      ],
+      "id": "49a4b7d0-c909-4450-a65e-b544e31c7e81",
+      "name": "Execution Analytics"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Inventory Check1": {
+      "main": [
+        [
+          {
+            "node": "Fetch WooCommerce Products1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch WooCommerce Products1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Send Supplier Notifications1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Supplier Notifications1": {
+      "main": [
+        [
+          {
+            "node": "Consolidate Inventory Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidate Inventory Data": {
+      "main": [
+        [
+          {
+            "node": "Persist Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Changes": {
+      "main": [
+        [
+          {
+            "node": "Execution Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4aca9b62-3eb7-4c8c-89b4-a55ef9f15d15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "zWe0ptqsqFCsG5mL",
+  "tags": []
+}

@@ -1,0 +1,1336 @@
+{
+  "name": "SaaS User Onboarding Complete Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "user-signup",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "af031b77-73f2-4977-8258-dcddc1dbc277",
+      "name": "Webhook - User Signup",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        -32
+      ],
+      "webhookId": "user-registration-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.body.user_id || $now.toMillis() }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "signup_date",
+              "name": "signup_date",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "onboarding_status",
+              "name": "onboarding_status",
+              "value": "started",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.body.company || 'Not Provided' }}",
+              "type": "string"
+            },
+            {
+              "id": "plan",
+              "name": "plan",
+              "value": "={{ $json.body.plan || 'free' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6e9805df-3751-4fcf-a96b-36a4c9a83247",
+      "name": "Prepare User Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1hrwDvNwsPKM2zb2PJmtWZeyZCrvdclyf9j8wlOnICEs",
+          "mode": "list",
+          "cachedResultName": "Users",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hrwDvNwsPKM2zb2PJmtWZeyZCrvdclyf9j8wlOnICEs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hrwDvNwsPKM2zb2PJmtWZeyZCrvdclyf9j8wlOnICEs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "plan",
+              "displayName": "plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "signup_date",
+              "displayName": "signup_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onboarding_status",
+              "displayName": "onboarding_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "welcome_email_sent",
+              "displayName": "welcome_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "day1_email_sent",
+              "displayName": "day1_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "day3_email_sent",
+              "displayName": "day3_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "day7_email_sent",
+              "displayName": "day7_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_activity",
+              "displayName": "last_activity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "be8d6304-3bbb-4caf-a244-16e4b1da7698",
+      "name": "Store User in Database",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -336,
+        -32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Welcome to {{ Your SaaS Name }}! 🎉",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }\n        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }\n        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }\n        .feature-box { background: #f7f7f7; padding: 15px; margin: 15px 0; border-radius: 5px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Welcome, {{ $json.name }}! 🚀</h1>\n            <p>Your journey to success starts here</p>\n        </div>\n        <div class=\"content\">\n            <h2>Let's get you started!</h2>\n            <p>Hi {{ $json.name }},</p>\n            <p>Thank you for signing up! We're thrilled to have you join our community. Your account has been successfully created with the <strong>{{ $json.plan }}</strong> plan.</p>\n            \n            <div class=\"feature-box\">\n                <h3>🎯 Quick Start Guide:</h3>\n                <ol>\n                    <li><strong>Complete your profile</strong> - Add your company details and preferences</li>\n                    <li><strong>Explore the dashboard</strong> - Familiarize yourself with key features</li>\n                    <li><strong>Connect integrations</strong> - Link your favorite tools</li>\n                    <li><strong>Create your first project</strong> - Start experiencing the magic!</li>\n                </ol>\n            </div>\n            \n            <div style=\"text-align: center;\">\n                <a href=\"https://yourapp.com/onboarding?user={{ $json.user_id }}\" class=\"button\">Start Onboarding</a>\n            </div>\n            \n            <div class=\"feature-box\">\n                <h3>📚 Helpful Resources:</h3>\n                <ul>\n                    <li>📖 <a href=\"https://yourapp.com/docs\">Documentation</a></li>\n                    <li>🎥 <a href=\"https://yourapp.com/videos\">Video Tutorials</a></li>\n                    <li>💬 <a href=\"https://yourapp.com/community\">Community Forum</a></li>\n                </ul>\n            </div>\n            \n            <p><strong>Need help?</strong> Our support team is here for you! Simply reply to this email or visit our help center.</p>\n        </div>\n        <div class=\"footer\">\n            <p>© 2024 Your SaaS Company | <a href=\"#\">Unsubscribe</a> | <a href=\"#\">Privacy Policy</a></p>\n            <p>Your User ID: {{ $json.user_id }}</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "replyTo": "support@yourcompany.com"
+        }
+      },
+      "id": "32639740-ad11-4bcf-818e-46d517d2c076",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        -32
+      ],
+      "webhookId": "0cc8fc5a-bd0c-4de5-a413-5ca75ed8b1a5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.crisp.chat/v1/website/YOUR_WEBSITE_ID/conversation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Crisp-Tier",
+              "value": "plugin"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "nickname",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "data",
+              "value": "={\"company\": \"{{ $json.company }}\", \"plan\": \"{{ $json.plan }}\", \"signup_date\": \"{{ $json.signup_date }}\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72204e62-1d82-4dd8-854d-8af3165514f2",
+      "name": "Create Support Contact (Crisp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        -32
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "hv5TdvEUjDSL74sJ",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.posthog.com/capture/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"YOUR_POSTHOG_PROJECT_API_KEY\",\n  \"event\": \"user_signed_up\",\n  \"properties\": {\n    \"distinct_id\": \"{{ $json.user_id }}\",\n    \"email\": \"{{ $json.email }}\",\n    \"name\": \"{{ $json.name }}\",\n    \"company\": \"{{ $json.company }}\",\n    \"plan\": \"{{ $json.plan }}\",\n    \"$set\": {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.name }}\",\n      \"signup_date\": \"{{ $json.signup_date }}\"\n    }\n  },\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "c9e8812f-7426-4701-a113-a962031ae523",
+      "name": "Track Signup (PostHog)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YourGoogleSheetIDHere",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "ScheduledEmails",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.user_id }}",
+            "email": "={{ $json.email }}",
+            "name": "={{ $json.name }}",
+            "day1_scheduled": "={{ $now.plus(1, 'day').toISO() }}",
+            "day3_scheduled": "={{ $now.plus(3, 'days').toISO() }}",
+            "day7_scheduled": "={{ $now.plus(7, 'days').toISO() }}",
+            "status": "pending"
+          }
+        },
+        "options": {}
+      },
+      "id": "b2999185-d780-4922-8ba7-af1af90a6d60",
+      "name": "Schedule Follow-up Emails",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c1744ff7-ad2e-4aca-92ef-cd3438797850",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "9d7d1be9-272f-41c3-a6af-5c8548ae09bf",
+      "name": "Check Scheduled Emails (Hourly)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -784,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1aglB3RQIobM1jye516XuEIXYFyWSe8phLniWVVAGbjM",
+          "mode": "list",
+          "cachedResultName": "ScheduledEmails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aglB3RQIobM1jye516XuEIXYFyWSe8phLniWVVAGbjM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aglB3RQIobM1jye516XuEIXYFyWSe8phLniWVVAGbjM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "409fff76-3c3b-4f07-84f2-86516aeb4544",
+      "name": "Get Scheduled Emails",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -560,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "day1",
+              "leftValue": "={{ $json.day1_scheduled }}",
+              "rightValue": "={{ $now.toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              }
+            },
+            {
+              "id": "day1_sent",
+              "leftValue": "={{ $json.day1_sent }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "af8a6719-72af-4965-b9b4-0a211389059a",
+      "name": "Filter Day 1 Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "day3",
+              "leftValue": "={{ $json.day3_scheduled }}",
+              "rightValue": "={{ $now.toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              }
+            },
+            {
+              "id": "day3_sent",
+              "leftValue": "={{ $json.day3_sent}}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f0a7ed3b-4587-47a8-a7fc-14ea0f9b2f15",
+      "name": "Filter Day 3 Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "day7",
+              "leftValue": "={{ $json.day7_scheduled }}",
+              "rightValue": "={{ $now.toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              }
+            },
+            {
+              "id": "day7_sent",
+              "leftValue": "={{ $json.day7_sent}}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a20692ed-a8e2-4a9c-b63c-7f25349cf356",
+      "name": "Filter Day 7 Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Day 1: Master Your Dashboard 📊",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }\n        .tip-box { background: #e8f5e9; padding: 15px; margin: 15px 0; border-left: 4px solid #4CAF50; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h2>Day 1: Let's Explore Your Dashboard!</h2>\n        </div>\n        <div class=\"content\">\n            <p>Hi {{ $json.name }},</p>\n            <p>Welcome to Day 1 of your onboarding journey! Today, we'll help you navigate your dashboard like a pro.</p>\n            \n            <div class=\"tip-box\">\n                <h3>🎯 Today's Goal: Master Your Dashboard</h3>\n                <ul>\n                    <li>Understanding the main navigation</li>\n                    <li>Customizing your workspace</li>\n                    <li>Setting up your first widget</li>\n                </ul>\n            </div>\n            \n            <p><strong>Quick Tutorial:</strong> <a href=\"https://yourapp.com/tutorial/dashboard\">5-minute Dashboard Tour</a></p>\n            \n            <p>Reply if you need any help!</p>\n            <p>Best,<br>The Team</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "da7817d3-8029-4bba-8bc9-fc2960dba513",
+      "name": "Send Day 1 Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        192
+      ],
+      "webhookId": "1f736bec-fa5d-4770-b158-a896827f36a3"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Day 3: Connect Your Favorite Tools 🔗",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: #2196F3; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }\n        .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }\n        .integration { padding: 10px; background: #f5f5f5; text-align: center; border-radius: 5px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h2>Day 3: Power Up with Integrations!</h2>\n        </div>\n        <div class=\"content\">\n            <p>Hi {{ $json.name }},</p>\n            <p>You're making great progress! Today, let's supercharge your workflow by connecting your favorite tools.</p>\n            \n            <h3>🔌 Popular Integrations:</h3>\n            <div class=\"integration-grid\">\n                <div class=\"integration\">📧 Gmail</div>\n                <div class=\"integration\">📊 Google Sheets</div>\n                <div class=\"integration\">💬 Slack</div>\n                <div class=\"integration\">📅 Calendar</div>\n            </div>\n            \n            <p><strong>Setup Guide:</strong> <a href=\"https://yourapp.com/integrations\">Connect Your Tools</a></p>\n            \n            <p>Questions? Just hit reply!</p>\n            <p>Best,<br>The Team</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "2fe1b0dc-6b52-43ea-9bc5-cc5e055b0161",
+      "name": "Send Day 3 Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        384
+      ],
+      "webhookId": "d3f7ed79-9e4c-4e49-9238-99be8d13b94c"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Day 7: You're a Pro Now! 🏆 Plus Special Offer",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }\n        .offer-box { background: #fff3e0; padding: 20px; margin: 20px 0; border: 2px dashed #ff9800; border-radius: 10px; text-align: center; }\n        .progress { background: #e0e0e0; border-radius: 10px; height: 20px; margin: 20px 0; }\n        .progress-bar { background: #4CAF50; height: 100%; border-radius: 10px; width: 70%; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🎉 One Week Milestone!</h1>\n        </div>\n        <div class=\"content\">\n            <p>Hi {{ $json.name }},</p>\n            <p>Congratulations! You've been with us for a week, and you're already doing amazing things!</p>\n            \n            <h3>Your Progress:</h3>\n            <div class=\"progress\">\n                <div class=\"progress-bar\"></div>\n            </div>\n            <p>70% Onboarding Complete!</p>\n            \n            <div class=\"offer-box\">\n                <h3>🎁 Special Offer Just for You!</h3>\n                <p>Upgrade to Pro and get <strong>30% OFF</strong> your first 3 months!</p>\n                <p>Use code: <strong>WEEK1PRO</strong></p>\n                <a href=\"https://yourapp.com/upgrade\" style=\"display: inline-block; padding: 10px 30px; background: #ff9800; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;\">Upgrade Now</a>\n            </div>\n            \n            <h3>📚 Resources to Continue Learning:</h3>\n            <ul>\n                <li>Advanced Features Guide</li>\n                <li>Best Practices Webinar (Tomorrow 2 PM EST)</li>\n                <li>Customer Success Stories</li>\n            </ul>\n            \n            <p>Keep up the great work!</p>\n            <p>Best,<br>The Team</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "c370abc1-f40a-47b1-b95e-8dd21b4066a5",
+      "name": "Send Day 7 Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        576
+      ],
+      "webhookId": "3d961cf2-bc7d-4384-a349-246c90660504"
+    },
+    {
+      "parameters": {
+        "url": "https://api.posthog.com/capture/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"YOUR_POSTHOG_PROJECT_API_KEY\",\n  \"event\": \"onboarding_email_sent\",\n  \"properties\": {\n    \"distinct_id\": \"{{ $json.user_id }}\",\n    \"email_type\": \"day1_tutorial\",\n    \"email\": \"{{ $json.email }}\"\n  },\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "9d74ee9e-bcf9-4e7b-86fe-1d31491783c5",
+      "name": "Track Day 1 Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.posthog.com/capture/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"YOUR_POSTHOG_PROJECT_API_KEY\",\n  \"event\": \"onboarding_email_sent\",\n  \"properties\": {\n    \"distinct_id\": \"{{ $json.user_id }}\",\n    \"email_type\": \"day3_integrations\",\n    \"email\": \"{{ $json.email }}\"\n  },\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "2fa4e7a7-0569-4061-990c-c66f6a8b411f",
+      "name": "Track Day 3 Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.posthog.com/capture/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"YOUR_POSTHOG_PROJECT_API_KEY\",\n  \"event\": \"onboarding_email_sent\",\n  \"properties\": {\n    \"distinct_id\": \"{{ $json.user_id }}\",\n    \"email_type\": \"day7_milestone\",\n    \"email\": \"{{ $json.email }}\",\n    \"special_offer_presented\": true\n  },\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "9b23d909-4ebe-4bad-8ffc-544c3f6ecc43",
+      "name": "Track Day 7 Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        576
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook - User Signup": [
+      {
+        "json": {
+          "headers": {
+            "host": "your-n8n-instance.com",
+            "content-type": "application/json",
+            "content-length": "123",
+            "user-agent": "curl/7.68.0",
+            "accept": "*/*"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "email": "testuser@company.com",
+            "name": "Test User",
+            "company": "Test Company",
+            "plan": "pro",
+            "user_id": "USR123456"
+          },
+          "webhookUrl": "https://your-n8n-instance.com/webhook/user-signup",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "Store User in Database": [
+      {
+        "json": {
+          "user_id": "USR123456",
+          "email": "testuser@company.com",
+          "name": "Test User",
+          "signup_date": "2025-10-02T09:22:29.996+05:00",
+          "onboarding_status": "started",
+          "company": "Test Company",
+          "plan": "pro"
+        }
+      }
+    ],
+    "Filter Day 7 Emails": [
+      {
+        "json": {
+          "row_number": 2,
+          "user_id": 1001,
+          "email": "john.doe@example.com",
+          "name": "John Doe",
+          "day1_scheduled": "2024-01-16T10:30:00Z",
+          "day3_scheduled": "2024-01-18T10:30:00Z",
+          "day7_scheduled": "2024-01-22T10:30:00Z",
+          "day1_sent": true,
+          "day3_sent": true,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 3,
+          "user_id": 1002,
+          "email": "jane.smith@test.com",
+          "name": "Jane Smith",
+          "day1_scheduled": "2024-01-17T14:20:00Z",
+          "day3_scheduled": "2024-01-19T14:20:00Z",
+          "day7_scheduled": "2024-01-23T14:20:00Z",
+          "day1_sent": true,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 4,
+          "user_id": 1003,
+          "email": "mike.jones@demo.com",
+          "name": "Mike Jones",
+          "day1_scheduled": "2024-01-18T09:15:00Z",
+          "day3_scheduled": "2024-01-20T09:15:00Z",
+          "day7_scheduled": "2024-01-24T09:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "user_id": 1004,
+          "email": "sarah.wilson@sample.com",
+          "name": "Sarah Wilson",
+          "day1_scheduled": "2024-01-19T16:45:00Z",
+          "day3_scheduled": "2024-01-21T16:45:00Z",
+          "day7_scheduled": "2024-01-25T16:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "user_id": 1005,
+          "email": "alex.brown@testmail.com",
+          "name": "Alex Brown",
+          "day1_scheduled": "2024-01-20T11:00:00Z",
+          "day3_scheduled": "2024-01-22T11:00:00Z",
+          "day7_scheduled": "2024-01-26T11:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "user_id": 1006,
+          "email": "emma.davis@demo.org",
+          "name": "Emma Davis",
+          "day1_scheduled": "2024-01-21T08:45:00Z",
+          "day3_scheduled": "2024-01-23T08:45:00Z",
+          "day7_scheduled": "2024-01-27T08:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 8,
+          "user_id": 1007,
+          "email": "robert.taylor@test.io",
+          "name": "Robert Taylor",
+          "day1_scheduled": "2024-01-22T13:30:00Z",
+          "day3_scheduled": "2024-01-24T13:30:00Z",
+          "day7_scheduled": "2024-01-28T13:30:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 9,
+          "user_id": 1008,
+          "email": "lisa.anderson@sample.net",
+          "name": "Lisa Anderson",
+          "day1_scheduled": "2024-01-23T15:00:00Z",
+          "day3_scheduled": "2024-01-25T15:00:00Z",
+          "day7_scheduled": "2024-01-29T15:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 10,
+          "user_id": 1009,
+          "email": "david.martinez@example.co",
+          "name": "David Martinez",
+          "day1_scheduled": "2024-01-24T09:20:00Z",
+          "day3_scheduled": "2024-01-26T09:20:00Z",
+          "day7_scheduled": "2024-01-30T09:20:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 11,
+          "user_id": 1010,
+          "email": "sophia.garcia@demo.biz",
+          "name": "Sophia Garcia",
+          "day1_scheduled": "2024-01-25T11:15:00Z",
+          "day3_scheduled": "2024-01-27T11:15:00Z",
+          "day7_scheduled": "2024-01-31T11:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      }
+    ],
+    "Filter Day 3 Emails": [
+      {
+        "json": {
+          "row_number": 3,
+          "user_id": 1002,
+          "email": "jane.smith@test.com",
+          "name": "Jane Smith",
+          "day1_scheduled": "2024-01-17T14:20:00Z",
+          "day3_scheduled": "2024-01-19T14:20:00Z",
+          "day7_scheduled": "2024-01-23T14:20:00Z",
+          "day1_sent": true,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 4,
+          "user_id": 1003,
+          "email": "mike.jones@demo.com",
+          "name": "Mike Jones",
+          "day1_scheduled": "2024-01-18T09:15:00Z",
+          "day3_scheduled": "2024-01-20T09:15:00Z",
+          "day7_scheduled": "2024-01-24T09:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "user_id": 1004,
+          "email": "sarah.wilson@sample.com",
+          "name": "Sarah Wilson",
+          "day1_scheduled": "2024-01-19T16:45:00Z",
+          "day3_scheduled": "2024-01-21T16:45:00Z",
+          "day7_scheduled": "2024-01-25T16:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "user_id": 1005,
+          "email": "alex.brown@testmail.com",
+          "name": "Alex Brown",
+          "day1_scheduled": "2024-01-20T11:00:00Z",
+          "day3_scheduled": "2024-01-22T11:00:00Z",
+          "day7_scheduled": "2024-01-26T11:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "user_id": 1006,
+          "email": "emma.davis@demo.org",
+          "name": "Emma Davis",
+          "day1_scheduled": "2024-01-21T08:45:00Z",
+          "day3_scheduled": "2024-01-23T08:45:00Z",
+          "day7_scheduled": "2024-01-27T08:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 8,
+          "user_id": 1007,
+          "email": "robert.taylor@test.io",
+          "name": "Robert Taylor",
+          "day1_scheduled": "2024-01-22T13:30:00Z",
+          "day3_scheduled": "2024-01-24T13:30:00Z",
+          "day7_scheduled": "2024-01-28T13:30:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 9,
+          "user_id": 1008,
+          "email": "lisa.anderson@sample.net",
+          "name": "Lisa Anderson",
+          "day1_scheduled": "2024-01-23T15:00:00Z",
+          "day3_scheduled": "2024-01-25T15:00:00Z",
+          "day7_scheduled": "2024-01-29T15:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 10,
+          "user_id": 1009,
+          "email": "david.martinez@example.co",
+          "name": "David Martinez",
+          "day1_scheduled": "2024-01-24T09:20:00Z",
+          "day3_scheduled": "2024-01-26T09:20:00Z",
+          "day7_scheduled": "2024-01-30T09:20:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 11,
+          "user_id": 1010,
+          "email": "sophia.garcia@demo.biz",
+          "name": "Sophia Garcia",
+          "day1_scheduled": "2024-01-25T11:15:00Z",
+          "day3_scheduled": "2024-01-27T11:15:00Z",
+          "day7_scheduled": "2024-01-31T11:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      }
+    ],
+    "Filter Day 1 Emails": [
+      {
+        "json": {
+          "row_number": 4,
+          "user_id": 1003,
+          "email": "mike.jones@demo.com",
+          "name": "Mike Jones",
+          "day1_scheduled": "2024-01-18T09:15:00Z",
+          "day3_scheduled": "2024-01-20T09:15:00Z",
+          "day7_scheduled": "2024-01-24T09:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "user_id": 1004,
+          "email": "sarah.wilson@sample.com",
+          "name": "Sarah Wilson",
+          "day1_scheduled": "2024-01-19T16:45:00Z",
+          "day3_scheduled": "2024-01-21T16:45:00Z",
+          "day7_scheduled": "2024-01-25T16:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "user_id": 1005,
+          "email": "alex.brown@testmail.com",
+          "name": "Alex Brown",
+          "day1_scheduled": "2024-01-20T11:00:00Z",
+          "day3_scheduled": "2024-01-22T11:00:00Z",
+          "day7_scheduled": "2024-01-26T11:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "user_id": 1006,
+          "email": "emma.davis@demo.org",
+          "name": "Emma Davis",
+          "day1_scheduled": "2024-01-21T08:45:00Z",
+          "day3_scheduled": "2024-01-23T08:45:00Z",
+          "day7_scheduled": "2024-01-27T08:45:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 8,
+          "user_id": 1007,
+          "email": "robert.taylor@test.io",
+          "name": "Robert Taylor",
+          "day1_scheduled": "2024-01-22T13:30:00Z",
+          "day3_scheduled": "2024-01-24T13:30:00Z",
+          "day7_scheduled": "2024-01-28T13:30:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 9,
+          "user_id": 1008,
+          "email": "lisa.anderson@sample.net",
+          "name": "Lisa Anderson",
+          "day1_scheduled": "2024-01-23T15:00:00Z",
+          "day3_scheduled": "2024-01-25T15:00:00Z",
+          "day7_scheduled": "2024-01-29T15:00:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 10,
+          "user_id": 1009,
+          "email": "david.martinez@example.co",
+          "name": "David Martinez",
+          "day1_scheduled": "2024-01-24T09:20:00Z",
+          "day3_scheduled": "2024-01-26T09:20:00Z",
+          "day7_scheduled": "2024-01-30T09:20:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      },
+      {
+        "json": {
+          "row_number": 11,
+          "user_id": 1010,
+          "email": "sophia.garcia@demo.biz",
+          "name": "Sophia Garcia",
+          "day1_scheduled": "2024-01-25T11:15:00Z",
+          "day3_scheduled": "2024-01-27T11:15:00Z",
+          "day7_scheduled": "2024-01-31T11:15:00Z",
+          "day1_sent": false,
+          "day3_sent": false,
+          "day7_sent": false,
+          "status": "pending"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - User Signup": {
+      "main": [
+        [
+          {
+            "node": "Prepare User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare User Data": {
+      "main": [
+        [
+          {
+            "node": "Store User in Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store User in Database": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Create Support Contact (Crisp)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Support Contact (Crisp)": {
+      "main": [
+        [
+          {
+            "node": "Track Signup (PostHog)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Signup (PostHog)": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Follow-up Emails": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Scheduled Emails (Hourly)": {
+      "main": [
+        [
+          {
+            "node": "Get Scheduled Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scheduled Emails": {
+      "main": [
+        [
+          {
+            "node": "Filter Day 1 Emails",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter Day 3 Emails",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter Day 7 Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Day 1 Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Day 1 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Day 3 Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Day 3 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Day 7 Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Day 7 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 1 Email": {
+      "main": [
+        [
+          {
+            "node": "Track Day 1 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 3 Email": {
+      "main": [
+        [
+          {
+            "node": "Track Day 3 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 7 Email": {
+      "main": [
+        [
+          {
+            "node": "Track Day 7 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "24bc8db9-df93-4e20-9115-9e3c128d6a8d",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "1wgtce7upNn1rZwW",
+  "tags": []
+}

@@ -1,0 +1,891 @@
+{
+  "name": "Student Enrollment Management Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/student-enrollment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9591afa5-d182-4644-887d-b2ff0f127fc3",
+      "name": "Student Enrollment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        -160
+      ],
+      "webhookId": "5d0bec53-e768-407c-ad39-27f9a98519d8",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "enableResponseOutput": true,
+        "respondWith": "json",
+        "responseBody": "{\n  \"message\": \"Application received and being processed\",\n  \"applicationId\": \"{{$node['Extract Student Data'].json['applicationId']}}\",\n  \"studentName\": \"{{$node['Extract Student Data'].json['studentName']}}\",\n  \"status\": \"received\",\n  \"timestamp\": \"{{new Date().toISOString()}}\"\n}",
+        "options": {
+          "responseCode": 202,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "306f98d8-a15f-4b02-b36c-040842c46d2f",
+      "name": "Send 202 Acknowledgment",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{$node[\"Extract Student Data\"].json[\"studentName\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "id-2",
+              "leftValue": "={{$node[\"Extract Student Data\"].json[\"email\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "@"
+            },
+            {
+              "id": "id-3",
+              "leftValue": "={{$node[\"Extract Student Data\"].json[\"phone\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": "@"
+            },
+            {
+              "id": "id-4",
+              "leftValue": "={{$node[\"Extract Student Data\"].json[\"program\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1adba6fc-c092-4b1f-b8a9-98eab07436d9",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "timestamp",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "applicationId",
+              "value": "={{ $json.applicationId }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "studentName",
+              "value": "={{ $json.studentName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "program",
+              "value": "={{ $json.program }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "status",
+              "value": "={{$node[\"Validate Required Fields\"].json[\"status\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "missingFields",
+              "value": "={{$node[\"Validate Required Fields\"].json[\"missingFields\"] || \"None\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6dcc255b-01aa-4247-a6e8-8a8216ae9695",
+      "name": "Prepare Sheet Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Student Enrollment Document</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Student Enrollment Document</h1>\n      <div class=\"logo\">FAST-NUCES</div>\n    </div>\n    \n    <div class=\"content\">\n      <div class=\"student-info\">\n        <h2>Student Information</h2>\n        <div class=\"info-row\">\n          <span class=\"label\">Student Name:</span>\n          <span class=\"value\">{{ $('Prepare Sheet Data').item.json.studentName }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"label\">Email:</span>\n          <span class=\"value\">{{ $('Prepare Sheet Data').item.json.email }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"label\">Program:</span>\n          <span class=\"value\">{{ $('Prepare Sheet Data').item.json.program }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"label\">Enrollment Date:</span>\n          <span class=\"value\">{{ new Date().toLocaleDateString() }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"label\">Application ID:</span>\n          <span class=\"value\">{{ $('Prepare Sheet Data').item.json.applicationId }}</span>\n        </div>\n      </div>\n      \n      <div class=\"enrollment-details\">\n        <h2>Enrollment Confirmation</h2>\n        <p>This document confirms that the above-mentioned student has been successfully enrolled in the specified program.</p>\n        <p><strong>Status:</strong> {{ $('Prepare Sheet Data').item.json.status }}</p>\n        <p><strong>Document Generated:</strong> {{ new Date().toLocaleString() }}</p>\n      </div>\n      \n      <div class=\"footer\">\n        <p>This is an official enrollment document generated by the automated enrollment system.</p>\n        <div class=\"signature-area\">\n          <div class=\"signature-line\"></div>\n          <p>Registrar's Office</p>\n        </div>\n      </div>\n    </div>\n  </div>\n</body>\n</html>\n<style>\n.container {\n  max-width: 800px;\n  margin: 0 auto;\n  padding: 20px;\n  font-family: Arial, sans-serif;\n  background-color: #ffffff;\n  border: 1px solid #ddd;\n}\n.header {\n  text-align: center;\n  border-bottom: 2px solid #003366;\n  padding-bottom: 20px;\n  margin-bottom: 30px;\n}\n.header h1 {\n  color: #003366;\n  font-size: 28px;\n  margin: 0;\n  font-weight: bold;\n}\n.logo {\n  color: #666;\n  font-size: 16px;\n  margin-top: 10px;\n}\n.content {\n  line-height: 1.6;\n}\n.student-info, .enrollment-details {\n  margin-bottom: 30px;\n  padding: 20px;\n  background-color: #f9f9f9;\n  border-radius: 8px;\n}\n.student-info h2, .enrollment-details h2 {\n  color: #003366;\n  font-size: 20px;\n  margin-bottom: 15px;\n  border-bottom: 1px solid #ccc;\n  padding-bottom: 5px;\n}\n.info-row {\n  display: flex;\n  margin-bottom: 10px;\n  padding: 8px 0;\n}\n.label {\n  font-weight: bold;\n  width: 150px;\n  color: #333;\n}\n.value {\n  color: #555;\n  flex: 1;\n}\n.enrollment-details p {\n  margin-bottom: 10px;\n  color: #444;\n}\n.footer {\n  margin-top: 40px;\n  text-align: center;\n  color: #666;\n  font-size: 14px;\n}\n.signature-area {\n  margin-top: 40px;\n}\n.signature-line {\n  width: 200px;\n  height: 1px;\n  background-color: #333;\n  margin: 0 auto 10px;\n}\n@media print {\n  .container {\n    border: none;\n    box-shadow: none;\n  }\n}\n</style>"
+      },
+      "id": "da2ccccd-dae1-40c8-9897-d64bf8eaf5c4",
+      "name": "Generate Enrollment Document",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Sheet Data').item.json.email }}",
+        "subject": "=Application Accepted - Welcome to {{$node[\"Prepare Sheet Data\"].json[\"program\"]}}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Application Accepted - FAST-NUCES</title>\n    <style>\n        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }\n        .email-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }\n        .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: white; }\n        .header h1 { font-size: 28px; margin-bottom: 10px; }\n        .content { padding: 30px; }\n        .congratulations { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 18px; font-weight: 600; }\n        .details-section { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0; }\n        .detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }\n        .status-badge { background: #10b981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }\n        .attachment-notice { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; color: #92400e; }\n        .footer { background: #1f2937; color: #d1d5db; padding: 25px; text-align: center; }\n    </style>\n</head>\n<body>\n    <div class=\"email-container\">\n        <div class=\"header\">\n            <h1>Application Accepted</h1>\n            <p>National University of Computer and Emerging Sciences</p>\n        </div>\n        \n        <div class=\"content\">\n            <div style=\"font-size: 18px; margin-bottom: 20px;\">\n                Dear {{ $('Prepare Sheet Data').item.json.studentName }},\n            </div>\n            \n            <div class=\"congratulations\">\n                Congratulations! Your application has been ACCEPTED!\n            </div>\n            \n            <p>We are delighted to inform you that your application for the <strong>{{ $('Prepare Sheet Data').item.json.program }}</strong> program has been accepted. Welcome to the FAST-NUCES family!</p>\n            \n            <div class=\"details-section\">\n                <h3>Application Details</h3>\n                <div class=\"detail-item\">\n                    <span><strong>Application ID:</strong></span>\n                    <span>{{ $('Prepare Sheet Data').item.json.applicationId }}</span>\n                </div>\n                <div class=\"detail-item\">\n                    <span><strong>Program:</strong></span>\n                    <span>{{ $('Prepare Sheet Data').item.json.program }}</span>\n                </div>\n                <div class=\"detail-item\">\n                    <span><strong>Status:</strong></span>\n                    <span><span class=\"status-badge\">Approved</span></span>\n                </div>\n            </div>\n            \n            <div class=\"attachment-notice\">\n                <strong>Important Document Attached</strong><br>\n                Please find your official enrollment document attached to this email.\n            </div>\n            \n            <div style=\"margin: 25px 0;\">\n                <h3>Important Next Steps:</h3>\n                <ol>\n                    <li>Review the attached enrollment document carefully</li>\n                    <li>Complete any remaining enrollment requirements</li>\n                    <li>Attend the mandatory orientation session</li>\n                    <li>Submit required documentation to admissions</li>\n                </ol>\n            </div>\n            \n            <div style=\"background: #f1f5f9; padding: 20px; border-radius: 8px; text-align: center;\">\n                <h4>Need Help?</h4>\n                <p><strong>Email:</strong> admissions@fast.edu.pk</p>\n                <p><strong>Phone:</strong> +92-42-111-128-128</p>\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <p><strong>FAST-NUCES</strong></p>\n            <p>Building tomorrow's technology leaders today</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "=data"
+              }
+            ]
+          }
+        }
+      },
+      "id": "7de3add4-e9de-43b9-9132-021693fbfffd",
+      "name": "Send Acceptance Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        -352
+      ],
+      "webhookId": "9aaaac3a-d250-43ce-97c4-8483949555ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Extract Student Data').item.json.email }}",
+        "subject": "Application Status Update",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .container { max-width: 600px; margin: 0 auto; }\n        .header { background: #dc2626; color: white; padding: 20px; text-align: center; }\n        .content { padding: 20px; background: #f9f9f9; }\n        .footer { padding: 15px; background: #374151; color: white; text-align: center; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h2>Application Update Required</h2>\n        </div>\n        <div class=\"content\">\n            <p>Dear {{ $('Extract Student Data').item.json.studentName }},</p>\n            \n            <p>Thank you for your interest in our {{ $('Extract Student Data').item.json.program }} program. After reviewing your application, we have identified some issues that need to be addressed before we can proceed with the evaluation process.</p>\n            \n            <p><strong>Application ID:</strong> {{ $('Extract Student Data').item.json.applicationId }}</p>\n            <p><strong>Program:</strong> {{ $('Extract Student Data').item.json.program }}</p>\n            \n            <p><strong>Issues Identified:</strong></p>\n            <ul>\n                <li>Incomplete application information</li>\n                <li>Missing required documents</li>\n            </ul>\n            \n            <p>Please complete your application and resubmit at your earliest convenience. If you have any questions, please contact our admissions office.</p>\n            \n            <p>Best regards,<br>\n            Admissions Team<br>\n            FAST-NUCES</p>\n        </div>\n        <div class=\"footer\">\n            <p>Contact: admissions@fast.edu.pk | +92-42-111-128-128</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "917ab7ba-9afc-479b-a988-2caebd283227",
+      "name": "Send Rejection Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        -144
+      ],
+      "webhookId": "46c1aad7-a6fb-4014-9b99-f78dd6fdb2b7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "asimniazi100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "asimniazi100@gmail.com"
+        },
+        "start": "={{ $now.plus(1, 'week') }}",
+        "end": "={{ $now.plus(1, 'week').plus(1, 'hour') }}",
+        "additionalFields": {
+          "description": "=Orientation meeting for {{ $('Check Application Status').item.json['Student Name'] }}\n\nProgram: {{ $('Check Application Status').item.json.Program }}\nEmail: {{ $('Check Application Status').item.json.Email }}\n\nPlease bring required documents and be prepared for program overview.",
+          "summary": "=Orientation Meeting - {{ $('Check Application Status').item.json['Student Name'] }}"
+        }
+      },
+      "id": "e725f0ba-c330-40a2-8b22-99829375ee72",
+      "name": "Schedule Orientation Meeting",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1568,
+        -352
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "zWO8k15tmQBF42so",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e209f5f-ff8e-440f-86a3-ce30202c4f6d",
+              "leftValue": "={{ $('Extract Student Data').item.json.gpa }}",
+              "rightValue": 2.5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d5657da8-e61d-4c12-aa54-8ccf4603cc83",
+      "name": "Check Application Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get webhook data\nconst data = $input.first().json.body.data;\nconst fields = data.fields;\n\n// Field mapping helper\nconst getField = (key) => {\n  const field = fields.find(f => f.key === key);\n  if (!field) return '';\n  \n  if (field.type === 'DROPDOWN' && field.value && field.value.length > 0) {\n    const selectedOption = field.options.find(opt => opt.id === field.value[0]);\n    return selectedOption ? selectedOption.text : '';\n  }\n  \n  return field.value || '';\n};\n\n// Extract and structure data\nconst studentData = {\n  applicationId: data.responseId,\n  submissionDate: data.createdAt,\n  formName: data.formName,\n  studentName: getField('question_KVqZeV'),\n  email: getField('question_LPQNzp'),\n  phone: getField('question_pDl1dB'),\n  dateOfBirth: getField('question_191ykl'),\n  program: getField('question_ME9qDA'),\n  educationLevel: getField('question_JONxdR'),\n  previousSchool: getField('question_g9R1e4'),\n  gpa: getField('question_yJWRNx'),\n  startDate: getField('question_X4KkrY'),\n  studentType: getField('question_8Z0yzP'),\n  emergencyContactName: getField('question_0epy7j'),\n  emergencyContactPhone: getField('question_z7aoN0'),\n  motivation: getField('question_5ZyD4E'),\n  status: 'New Application',\n  processedAt: new Date().toISOString()\n};\n\nreturn studentData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -160
+      ],
+      "id": "2c068557-d0af-4478-9c67-d1507410bc25",
+      "name": "Extract Student Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk",
+          "mode": "list",
+          "cachedResultName": "Education - Enrollment Management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Application ID": "={{ $json.applicationId }}",
+            "Student Name": "={{ $json.studentName }}",
+            "Email": "={{ $json.email }}",
+            "Program": "={{ $json.program }}",
+            "Status": "={{ $json.status }}",
+            "Missing Fields": "={{ $json.missingFields }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Application ID",
+              "displayName": "Application ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Student Name",
+              "displayName": "Student Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Program",
+              "displayName": "Program",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Missing Fields",
+              "displayName": "Missing Fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Event ID",
+              "displayName": "Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        -256
+      ],
+      "id": "4bf217df-b99f-4e3b-8989-ebac71e9ab2c",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "timestamp",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "studentName",
+              "value": "={{ $json.studentName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "email",
+              "value": "={{ $json.email || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "program",
+              "value": "={{ $json.program || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "status",
+              "value": "Incomplete",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "missingFields",
+              "value": "={{ Object.keys({ studentName: $json.studentName, program: $json.program, educationLevel: $json.educationLevel, previousSchool: $json.previousSchool, motivation: $json.motivation }).filter(key => !$json[key] || $json[key].toString().trim() === \"\").join(\", \") }}",
+              "type": "string"
+            },
+            {
+              "id": "1b048a4a-42e4-491c-887a-1b52e468969c",
+              "name": "applicationId",
+              "value": "={{ $json.applicationId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "90e6b7d1-2c33-484f-8a9b-70986af4b816",
+      "name": "Handle Missing Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk",
+          "mode": "list",
+          "cachedResultName": "Education - Enrollment Management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1R48zuZ4c08yYJZl5jKkgNQRfnG6uSBQ5hAbQ9sB_Pxk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Application ID": "={{ $json.applicationId }}",
+            "Student Name": "={{ $json.studentName }}",
+            "Program": "={{ $json.program }}",
+            "Email": "={{ $json.email }}",
+            "Status": "={{ $json.status }}",
+            "Missing Fields": "={{ $json.missingFields }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Application ID",
+              "displayName": "Application ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Student Name",
+              "displayName": "Student Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Program",
+              "displayName": "Program",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Missing Fields",
+              "displayName": "Missing Fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Event ID",
+              "displayName": "Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        -64
+      ],
+      "id": "ba0a97b6-7d28-4112-a33d-174ca18b1d96",
+      "name": "Append row in sheet1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "sk_bc59d153d01e23ffeac120a22e46586f6aaa05ff"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "={{ $node[\"Generate Enrollment Document\"].json.html }}"
+            },
+            {
+              "name": "format",
+              "value": "=A4"
+            },
+            {
+              "name": "margin",
+              "value": "1cm"
+            },
+            {
+              "name": "landscape",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        -352
+      ],
+      "id": "9703c199-c963-4621-affc-dba7fbec94b6",
+      "name": "Convert to PDF"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=FAST-NUCES Application Incomplete - {{ $json['Student Name'] }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;\">\n  <div style=\"background-color: #ffffff; padding: 30px; border-radius: 8px; border-left: 4px solid #dc3545;\">\n    \n    <div style=\"text-align: center; margin-bottom: 30px;\">\n      <h1 style=\"color: #dc3545; margin: 0;\">FAST-NUCES</h1>\n      <p style=\"color: #6c757d; margin: 5px 0;\">National University of Computer and Emerging Sciences</p>\n    </div>\n    \n    <h2 style=\"color: #dc3545;\">Application Incomplete</h2>\n    \n    <p>Dear {{ $json[\"Student Name\"] }},</p>\n    \n    <p>We received your enrollment application, but it appears some required information is missing to complete your submission.</p>\n    \n    <div style=\"background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;\">\n      <h3 style=\"color: #856404; margin-top: 0;\">Missing Required Fields:</h3>\n      <p style=\"color: #856404; font-weight: bold;\">{{ $json[\"Missing Fields\"] }}</p>\n    </div>\n    \n    <h3 style=\"color: #495057;\">Please Complete:</h3>\n    <ul style=\"color: #495057;\">\n      <li><strong>Program:</strong> Select your desired program of study</li>\n      <li><strong>Education Level:</strong> Your previous education background</li>\n      <li><strong>Previous School:</strong> Name of your last educational institution</li>\n      <li><strong>Motivation:</strong> Why you're interested in this program</li>\n    </ul>\n    \n    <h3 style=\"color: #495057;\">Next Steps:</h3>\n    <ol style=\"color: #495057;\">\n      <li>Complete the missing information listed above</li>\n      <li>Resubmit your application form</li>\n      <li>You'll receive a confirmation email once your application is complete</li>\n    </ol>\n    \n    <div style=\"background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n      <p style=\"margin: 5px 0;\"><strong>Application ID:</strong> {{ $json[\"Application ID\"] }}</p>\n      <p style=\"margin: 5px 0;\"><strong>Submitted:</strong> {{ $json.Timestamp }}</p>\n      <p style=\"margin: 5px 0;\"><strong>Status:</strong> {{ $json.Status }}</p>\n    </div>\n    \n    <div style=\"background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n      <h4 style=\"color: #0c5460; margin-top: 0;\">Need Help?</h4>\n      <p style=\"color: #0c5460; margin: 5px 0;\">Email: <strong>admissions@nu.edu.pk</strong></p>\n      <p style=\"color: #0c5460; margin: 5px 0;\">Phone: <strong>+92-42-111-128-128</strong></p>\n    </div>\n    \n    <div style=\"text-align: center; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;\">\n      <p style=\"color: #6c757d; font-size: 14px; margin: 0;\">FAST-NUCES Admissions Office</p>\n      <p style=\"color: #6c757d; font-size: 12px; margin: 5px 0 0 0;\">This is an automated message. Please do not reply to this email.</p>\n    </div>\n    \n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        -64
+      ],
+      "id": "989a08b6-a991-4aca-91ce-9a98747da495",
+      "name": "Send Incomplete Application Email",
+      "webhookId": "03680455-8c7f-4217-aaba-2be6ea6f999b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Schedule Orientation Meeting": [
+      {
+        "json": {
+          "id": "tnp0nqeeim9v0r9f79n33nnapc",
+          "summary": "Orientation Meeting - Asim Niazi",
+          "start": {
+            "dateTime": "2025-10-13T03:40:47+05:00",
+            "timeZone": "Asia/Karachi"
+          },
+          "end": {
+            "dateTime": "2025-10-13T04:40:47+05:00",
+            "timeZone": "Asia/Karachi"
+          },
+          "creator": {
+            "email": "asimniazi100@gmail.com",
+            "self": true
+          },
+          "organizer": {
+            "email": "asimniazi100@gmail.com",
+            "self": true
+          },
+          "description": "Orientation meeting for Asim Niazi\n\nProgram: Business Administration\nEmail: asimniazi100@gmail.com\n\nPlease bring required documents and be prepared for program overview.",
+          "created": "2025-10-05T22:40:48.000Z",
+          "updated": "2025-10-05T22:40:48.230Z",
+          "etag": "\"3519408096461438\"",
+          "eventType": "default",
+          "htmlLink": "https://www.google.com/calendar/event?eid=dG5wMG5xZWVpbTl2MHI5Zjc5bjMzbm5hcGMgYXNpbW5pYXppMTAwQG0",
+          "iCalUID": "tnp0nqeeim9v0r9f79n33nnapc@google.com",
+          "kind": "calendar#event",
+          "reminders": {
+            "useDefault": true
+          },
+          "sequence": 0,
+          "status": "confirmed"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Student Enrollment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Student Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send 202 Acknowledgment": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Missing Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sheet Data": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Application Status": {
+      "main": [
+        [
+          {
+            "node": "Generate Enrollment Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Rejection Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Enrollment Document": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Acceptance Email": {
+      "main": [
+        [
+          {
+            "node": "Schedule Orientation Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Student Data": {
+      "main": [
+        [
+          {
+            "node": "Send 202 Acknowledgment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Check Application Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Missing Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Acceptance Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send Incomplete Application Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b45b017b-cee5-4405-828d-9f05e1a4c8ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "K4oskVNeIYXWe48F",
+  "tags": []
+}

@@ -1,0 +1,1007 @@
+{
+  "name": "Insurance Policy Management - Complete",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "6895acb4-3c04-4a7f-83ee-3d726cb826b4",
+      "name": "Daily Renewal Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1296,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1PqO3bohhjZNfPeyJixVNixBCjD9jNG1F8nVcJR9AF_M",
+          "mode": "list",
+          "cachedResultName": "PolicyData",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PqO3bohhjZNfPeyJixVNixBCjD9jNG1F8nVcJR9AF_M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PqO3bohhjZNfPeyJixVNixBCjD9jNG1F8nVcJR9AF_M/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "a802fb78-a185-4cf3-8c24-8385c873bcb7",
+      "name": "Get Policy Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1072,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Calculate days until renewal for each policy\nconst renewalDate = new Date($input.item.json.renewalDate);\nconst today = new Date();\nconst msPerDay = 24 * 60 * 60 * 1000;\nconst daysUntilRenewal = Math.floor((renewalDate - today) / msPerDay);\n\n// Add calculated fields\n$input.item.json.daysUntilRenewal = daysUntilRenewal;\n$input.item.json.renewalPremium = Math.round($input.item.json.currentPremium * 1.05);\n$input.item.json.processingDate = new Date().toISOString().split('T')[0];\n\n// Return the enhanced item\nreturn $input.item;"
+      },
+      "id": "d1d3c8c1-dbdd-4eec-ae36-cb726f6f32e1",
+      "name": "Calculate Days Until Renewal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.daysUntilRenewal }}",
+              "rightValue": 30,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "condition3",
+              "leftValue": "={{ $json.policyStatus }}",
+              "rightValue": "Active",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7580b256-678f-43cd-a255-d602ac51ee52",
+      "name": "Check Renewal Eligibility",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -624,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field1",
+              "name": "policyNumber",
+              "value": "={{ $json.policyNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "field2",
+              "name": "policyHolderName",
+              "value": "={{ $json.policyHolderName }}",
+              "type": "string"
+            },
+            {
+              "id": "field3",
+              "name": "policyHolderEmail",
+              "value": "={{ $json.policyHolderEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "field4",
+              "name": "policyType",
+              "value": "={{ $json.policyType }}",
+              "type": "string"
+            },
+            {
+              "id": "field5",
+              "name": "currentPremium",
+              "value": "={{ $json.currentPremium }}",
+              "type": "number"
+            },
+            {
+              "id": "field6",
+              "name": "renewalDate",
+              "value": "={{ $json.renewalDate }}",
+              "type": "string"
+            },
+            {
+              "id": "field7",
+              "name": "renewalPremium",
+              "value": "={{ $json.renewalPremium }}",
+              "type": "number"
+            },
+            {
+              "id": "field8",
+              "name": "daysUntilRenewal",
+              "value": "={{ $json.daysUntilRenewal }}",
+              "type": "number"
+            },
+            {
+              "id": "field9",
+              "name": "coverageAmount",
+              "value": "={{ $json.coverageAmount }}",
+              "type": "number"
+            },
+            {
+              "id": "field10",
+              "name": "deductible",
+              "value": "={{ $json.deductible }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "id": "a3fa43fc-bb04-4f3d-ae2f-fce5ec1c81bc",
+      "name": "Prepare Renewal Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n        \n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            background: #f5f5f5;\n        }\n        \n        .document-container {\n            max-width: 800px;\n            margin: 0 auto;\n            background: white;\n            box-shadow: 0 0 20px rgba(0,0,0,0.1);\n        }\n        \n        .header {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 40px;\n            text-align: center;\n        }\n        \n        .header h1 {\n            font-size: 32px;\n            margin-bottom: 10px;\n            font-weight: 300;\n        }\n        \n        .header .policy-number {\n            font-size: 18px;\n            opacity: 0.9;\n        }\n        \n        .content {\n            padding: 40px;\n        }\n        \n        .alert-box {\n            background: #fff3cd;\n            border-left: 4px solid #ffc107;\n            padding: 20px;\n            margin-bottom: 30px;\n            border-radius: 5px;\n        }\n        \n        .alert-box.urgent {\n            background: #f8d7da;\n            border-left-color: #dc3545;\n        }\n        \n        .section {\n            margin-bottom: 30px;\n        }\n        \n        .section-title {\n            color: #667eea;\n            font-size: 20px;\n            margin-bottom: 15px;\n            padding-bottom: 10px;\n            border-bottom: 2px solid #e0e0e0;\n        }\n        \n        .info-grid {\n            display: grid;\n            grid-template-columns: repeat(2, 1fr);\n            gap: 20px;\n            margin-bottom: 20px;\n        }\n        \n        .info-item {\n            background: #f8f9fa;\n            padding: 15px;\n            border-radius: 8px;\n            border-left: 3px solid #667eea;\n        }\n        \n        .info-label {\n            font-size: 12px;\n            color: #666;\n            text-transform: uppercase;\n            margin-bottom: 5px;\n            font-weight: 600;\n        }\n        \n        .info-value {\n            font-size: 18px;\n            color: #333;\n            font-weight: 500;\n        }\n        \n        .premium-comparison {\n            background: #f0f7ff;\n            padding: 25px;\n            border-radius: 10px;\n            margin: 20px 0;\n        }\n        \n        .premium-row {\n            display: flex;\n            justify-content: space-between;\n            padding: 10px 0;\n            border-bottom: 1px solid #d0e5ff;\n        }\n        \n        .premium-row:last-child {\n            border-bottom: none;\n            padding-top: 15px;\n            margin-top: 10px;\n            border-top: 2px solid #667eea;\n        }\n        \n        .premium-label {\n            color: #666;\n        }\n        \n        .premium-value {\n            font-weight: bold;\n            color: #333;\n        }\n        \n        .premium-value.new {\n            color: #667eea;\n            font-size: 20px;\n        }\n        \n        .options-list {\n            background: white;\n            border: 1px solid #e0e0e0;\n            border-radius: 10px;\n            overflow: hidden;\n        }\n        \n        .option-item {\n            padding: 20px;\n            border-bottom: 1px solid #e0e0e0;\n        }\n        \n        .option-item:last-child {\n            border-bottom: none;\n        }\n        \n        .option-item:hover {\n            background: #f8f9fa;\n        }\n        \n        .option-number {\n            display: inline-block;\n            width: 30px;\n            height: 30px;\n            background: #667eea;\n            color: white;\n            text-align: center;\n            line-height: 30px;\n            border-radius: 50%;\n            margin-right: 15px;\n            font-weight: bold;\n        }\n        \n        .option-title {\n            font-weight: bold;\n            color: #333;\n            margin-bottom: 5px;\n        }\n        \n        .option-description {\n            color: #666;\n            margin-left: 45px;\n        }\n        \n        .signature-section {\n            background: #f8f9fa;\n            padding: 30px;\n            border-radius: 10px;\n            margin-top: 30px;\n            text-align: center;\n        }\n        \n        .signature-line {\n            border-bottom: 2px solid #333;\n            margin: 30px auto;\n            width: 300px;\n        }\n        \n        .footer {\n            background: #2c3d4f;\n            color: white;\n            padding: 30px;\n            text-align: center;\n        }\n        \n        .footer-contact {\n            margin-bottom: 20px;\n        }\n        \n        .footer-contact p {\n            margin: 5px 0;\n        }\n        \n        .legal-text {\n            font-size: 11px;\n            color: #aaa;\n            margin-top: 20px;\n            padding-top: 20px;\n            border-top: 1px solid #445566;\n        }\n        \n        @media print {\n            .document-container {\n                box-shadow: none;\n            }\n            \n            .header {\n                background: #667eea !important;\n                -webkit-print-color-adjust: exact;\n                print-color-adjust: exact;\n            }\n        }\n        \n        .status-badge {\n            display: inline-block;\n            padding: 5px 15px;\n            border-radius: 20px;\n            font-size: 14px;\n            font-weight: bold;\n        }\n        \n        .status-overdue {\n            background: #dc3545;\n            color: white;\n        }\n        \n        .status-upcoming {\n            background: #28a745;\n            color: white;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"document-container\">\n        <div class=\"header\">\n            <h1>INSURANCE POLICY RENEWAL NOTICE</h1>\n            <div class=\"policy-number\">Policy Number: {{ $json.policyNumber }}</div>\n        </div>\n        \n        <div class=\"content\">\n            <!-- Alert Box - Dynamic based on days until renewal -->\n            <div class=\"alert-box {{ $json.daysUntilRenewal < 0 ? 'urgent' : '' }}\">\n                <strong>⚠️ IMPORTANT NOTICE:</strong><br>\n                {{ $json.daysUntilRenewal < 0 ? 'Your policy renewal is OVERDUE by ' + Math.abs($json.daysUntilRenewal) + ' days!' : 'Your policy is due for renewal in ' + $json.daysUntilRenewal + ' days.' }}\n                <br>Immediate action required to maintain coverage.\n            </div>\n            \n            <!-- Policy Holder Information -->\n            <div class=\"section\">\n                <h2 class=\"section-title\">Policy Holder Information</h2>\n                <div class=\"info-grid\">\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Policy Holder Name</div>\n                        <div class=\"info-value\">{{ $json.policyHolderName }}</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Email Address</div>\n                        <div class=\"info-value\">{{ $json.policyHolderEmail }}</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Policy Type</div>\n                        <div class=\"info-value\">{{ $json.policyType }} Insurance</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Policy Number</div>\n                        <div class=\"info-value\">{{ $json.policyNumber }}</div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Coverage Details -->\n            <div class=\"section\">\n                <h2 class=\"section-title\">Coverage Details</h2>\n                <div class=\"info-grid\">\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Coverage Amount</div>\n                        <div class=\"info-value\">${{ Number($json.coverageAmount).toLocaleString() }}</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Deductible</div>\n                        <div class=\"info-value\">${{ Number($json.deductible).toLocaleString() }}</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Renewal Date</div>\n                        <div class=\"info-value\">{{ $json.renewalDate }}</div>\n                    </div>\n                    <div class=\"info-item\">\n                        <div class=\"info-label\">Status</div>\n                        <div class=\"info-value\">\n                            <span class=\"status-badge {{ $json.daysUntilRenewal < 0 ? 'status-overdue' : 'status-upcoming' }}\">\n                                {{ $json.daysUntilRenewal < 0 ? 'OVERDUE' : 'RENEWAL DUE' }}\n                            </span>\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Premium Information -->\n            <div class=\"section\">\n                <h2 class=\"section-title\">Premium Information</h2>\n                <div class=\"premium-comparison\">\n                    <div class=\"premium-row\">\n                        <span class=\"premium-label\">Current Annual Premium:</span>\n                        <span class=\"premium-value\">${{ Number($json.currentPremium).toLocaleString() }}</span>\n                    </div>\n                    <div class=\"premium-row\">\n                        <span class=\"premium-label\">Premium Adjustment (5% increase):</span>\n                        <span class=\"premium-value\">${{ Number($json.renewalPremium - $json.currentPremium).toLocaleString() }}</span>\n                    </div>\n                    <div class=\"premium-row\">\n                        <span class=\"premium-label\"><strong>New Annual Premium:</strong></span>\n                        <span class=\"premium-value new\">${{ Number($json.renewalPremium).toLocaleString() }}</span>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Renewal Options -->\n            <div class=\"section\">\n                <h2 class=\"section-title\">Your Renewal Options</h2>\n                <div class=\"options-list\">\n                    <div class=\"option-item\">\n                        <div>\n                            <span class=\"option-number\">1</span>\n                            <span class=\"option-title\">Automatic Renewal</span>\n                        </div>\n                        <div class=\"option-description\">\n                            Continue with your current coverage at the new premium rate of ${{ $json.renewalPremium }}/year. \n                            Sign and return this document to confirm.\n                        </div>\n                    </div>\n                    <div class=\"option-item\">\n                        <div>\n                            <span class=\"option-number\">2</span>\n                            <span class=\"option-title\">Modify Coverage</span>\n                        </div>\n                        <div class=\"option-description\">\n                            Contact our customer service team to discuss adjusting your coverage levels, deductible, or exploring other options.\n                        </div>\n                    </div>\n                    <div class=\"option-item\">\n                        <div>\n                            <span class=\"option-number\">3</span>\n                            <span class=\"option-title\">Cancel Policy</span>\n                        </div>\n                        <div class=\"option-description\">\n                            If you do not wish to renew, no action is required. Your policy will expire on the renewal date.\n                        </div>\n                    </div>\n                </div>\n            </div>\n            \n            <!-- Signature Section -->\n            <div class=\"signature-section\">\n                <h3>Authorization for Renewal</h3>\n                <p>By signing below, I authorize the renewal of my insurance policy with the terms stated above.</p>\n                \n                <div style=\"margin-top: 40px;\">\n                    <div style=\"display: inline-block; width: 45%; text-align: left;\">\n                        <div class=\"signature-line\"></div>\n                        <p>Policy Holder Signature</p>\n                    </div>\n                    <div style=\"display: inline-block; width: 45%; text-align: left;\">\n                        <div class=\"signature-line\"></div>\n                        <p>Date</p>\n                    </div>\n                </div>\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <div class=\"footer-contact\">\n                <p><strong>Need Assistance?</strong></p>\n                <p>📞 Call: 1-800-INSURANCE</p>\n                <p>📧 Email: support@insurance.com</p>\n                <p>🌐 Web: www.insurance.com/renewal</p>\n            </div>\n            <div class=\"legal-text\">\n                This document is generated for Policy #{{ $json.policyNumber }} on {{ new Date().toLocaleDateString() }}.<br>\n                © 2025 Insurance Company. All rights reserved. This is a legally binding document once signed.\n            </div>\n        </div>\n    </div>\n</body>\n</html>"
+      },
+      "id": "3bdc624a-8f18-4844-8308-37e74cbda0e1",
+      "name": "Generate HTML Document",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Check Renewal Eligibility').item.json.policyHolderEmail }}",
+        "subject": "=Important: Insurance Policy Renewal Notice - Policy #{{ $('Check Renewal Eligibility').item.json.policyNumber }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "16215a47-1645-4791-b7bf-24d29b2bb5f9",
+      "name": "Send Renewal Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        96,
+        0
+      ],
+      "webhookId": "f9dc9ce5-f3a7-4a9a-b1ed-8ce74ae1fd6f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.docuseal.co/submissions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Auth-Token",
+              "value": ""
+              "value": ""
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template_id\": \"1887458\",\n  \"send_email\": true,\n  \"submitters\": [\n    {\n      \"email\": \"{{ $('Check Renewal Eligibility').item.json.policyHolderEmail }}\",\n      \"name\": \"{{ $('Check Renewal Eligibility').item.json.policyHolderName }}\",\n      \"role\": \"First Party\",\n      \"fields\": [\n        {\n          \"name\": \"Policy Number\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.policyNumber }}\"\n        },\n        {\n          \"name\": \"Type\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.policyType }}\"\n        },\n        {\n          \"name\": \"Policy Holder\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.policyHolderName }}\"\n        },\n        {\n          \"name\": \"Renewal Date\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.renewalDate }}\"\n        },\n        {\n          \"name\": \"Deductible\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.deductible }}\"\n        },\n        {\n          \"name\": \"Coverage Amount\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.coverageAmount }}\"\n        },\n        {\n          \"name\": \"New Renewal Premium\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.renewalPremium }}\"\n        },\n        {\n          \"name\": \"Current Premium\",\n          \"value\": \"{{ $('Check Renewal Eligibility').item.json.currentPremium }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "1238e4fd-f165-4886-a8db-7c2228fccf76",
+      "name": "Send for E-Signature",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        0
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "log1",
+              "name": "policyNumber",
+              "value": "={{ $('Prepare Renewal Data').item.json.policyNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "log2",
+              "name": "policyHolderName",
+              "value": "={{ $('Prepare Renewal Data').item.json.policyHolderName }}",
+              "type": "string"
+            },
+            {
+              "id": "log3",
+              "name": "policyHolderEmail",
+              "value": "={{ $('Prepare Renewal Data').item.json.policyHolderEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "log4",
+              "name": "renewalNoticeDate",
+              "value": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "log5",
+              "name": "renewalStatus",
+              "value": "Notice Sent",
+              "type": "string"
+            },
+            {
+              "id": "log6",
+              "name": "emailSent",
+              "value": "true",
+              "type": "boolean"
+            },
+            {
+              "id": "log7",
+              "name": "signatureRequested",
+              "value": "={{ $('Send for E-Signature').item.error ? false : true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "log8",
+              "name": "signatureRequestId",
+              "value": "={{ $('Send for E-Signature').item.json.id || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "log9",
+              "name": "nextFollowUpDate",
+              "value": "={{ $now.plus(7, 'days').format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "log10",
+              "name": "daysUntilRenewal",
+              "value": "={{ $('Prepare Renewal Data').item.json.daysUntilRenewal }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "id": "c302bc7a-8536-4dca-ae0f-0dd05a8a17d7",
+      "name": "Edit Before Sheet Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Ec_Sy6kYix-1jTRSW-J-xfTtTrJ4CHaRWyP77pXoeIs",
+          "mode": "list",
+          "cachedResultName": "RenewalLog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ec_Sy6kYix-1jTRSW-J-xfTtTrJ4CHaRWyP77pXoeIs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ec_Sy6kYix-1jTRSW-J-xfTtTrJ4CHaRWyP77pXoeIs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "policyNumber",
+              "displayName": "policyNumber",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "policyHolderName",
+              "displayName": "policyHolderName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "renewalNoticeDate",
+              "displayName": "renewalNoticeDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "renewalStatus",
+              "displayName": "renewalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "emailSent",
+              "displayName": "emailSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "signatureRequested",
+              "displayName": "signatureRequested",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nextFollowUp",
+              "displayName": "nextFollowUp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "policyHolderEmail",
+              "displayName": "policyHolderEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "signatureRequestId",
+              "displayName": "signatureRequestId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nextFollowUpDate",
+              "displayName": "nextFollowUpDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "daysUntilRenewal",
+              "displayName": "daysUntilRenewal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "217b1454-8660-4c8d-92b7-e901dee866b5",
+      "name": "Log Renewal Activity",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        944,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Workflow Overview\n\nThis workflow automatically:\n1. Checks policies daily for renewal\n2. Filters policies needing renewal (≤30 days)\n3. Generates PDF renewal notices\n4. Sends email notifications\n5. Requests e-signatures\n6. Logs all activities\n\n**Next Steps:**\n- Replace Sheet IDs\n- Add credentials\n- Test with sample data",
+        "height": 250,
+        "width": 280,
+        "color": 4
+      },
+      "id": "aa6ad867-ffc6-4d9c-b0a9-f0d8407a6785",
+      "name": "Workflow Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ Setup Required\n\n1. **Google Sheets:**\n   - Replace SHEET_ID in both nodes\n   - Add OAuth2 credentials\n\n2. **Gmail:**\n   - Add Gmail OAuth2\n\n3. **Docuseal:**\n   - Get API key\n   - Create template\n   - Update HTTP node",
+        "height": 250,
+        "width": 280,
+        "color": 5
+      },
+      "id": "7fdefe2e-3947-456a-b7d6-6b98b48642f5",
+      "name": "Setup Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📊 No Renewal Needed\n\nPolicies that don't meet criteria:\n- More than 30 days until renewal\n- Inactive status\n- Already renewed\n\nThese are automatically filtered out.",
+        "height": 180,
+        "width": 280,
+        "color": 6
+      },
+      "id": "ecf1e645-9071-4144-912b-b76f2dc11312",
+      "name": "Filtered Policies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 Alternative E-Sign Services\n\n**Free Options:**\n- **Docuseal**: 10 docs/month\n- **PandaDoc**: Free plan\n- **SignRequest**: 100/month\n- **HelloSign**: 3/month\n\nUpdate HTTP Request node with your chosen service API.",
+        "height": 200,
+        "width": 300,
+        "color": 3
+      },
+      "id": "7f7a6372-2b2a-4dc5-afad-770aa37ab811",
+      "name": "E-Signature Options",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -272
+      ]
+    }
+  ],
+  "pinData": {
+    "Log Renewal Activity": [
+      {
+        "json": {
+          "policyNumber": "POL-2024-001",
+          "policyHolderName": "John Smith",
+          "policyHolderEmail": "john.smith@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693069",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -264
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-002",
+          "policyHolderName": "Sarah Johnson",
+          "policyHolderEmail": "sarah.j@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693068",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -259
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-003",
+          "policyHolderName": "Michael Brown",
+          "policyHolderEmail": "m.brown@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693072",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -254
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-004",
+          "policyHolderName": "Emily Davis",
+          "policyHolderEmail": "emily.d@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693070",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -247
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-005",
+          "policyHolderName": "Robert Wilson",
+          "policyHolderEmail": "r.wilson@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693071",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -238
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-006",
+          "policyHolderName": "Lisa Anderson",
+          "policyHolderEmail": "lisa.a@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693075",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -233
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-007",
+          "policyHolderName": "David Martinez",
+          "policyHolderEmail": "d.martinez@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693073",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -228
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-008",
+          "policyHolderName": "Jennifer Taylor",
+          "policyHolderEmail": "j.taylor@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693074",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -219
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-010",
+          "policyHolderName": "Maria Rodriguez",
+          "policyHolderEmail": "m.rodriguez@email.com",
+          "renewalNoticeDate": "2025-10-06 04:57:54",
+          "renewalStatus": "Notice Sent",
+          "emailSent": true,
+          "signatureRequested": true,
+          "signatureRequestId": "4693076",
+          "nextFollowUpDate": "2025-10-13",
+          "daysUntilRenewal": -205
+        }
+      }
+    ],
+    "Prepare Renewal Data": [
+      {
+        "json": {
+          "policyNumber": "POL-2024-001",
+          "policyHolderName": "John Smith",
+          "policyHolderEmail": "john.smith@email.com",
+          "policyType": "Auto",
+          "currentPremium": 1200,
+          "renewalDate": "2025-01-15",
+          "renewalPremium": 1260,
+          "daysUntilRenewal": -264,
+          "coverageAmount": 50000,
+          "deductible": 500
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-002",
+          "policyHolderName": "Sarah Johnson",
+          "policyHolderEmail": "sarah.j@email.com",
+          "policyType": "Home",
+          "currentPremium": 800,
+          "renewalDate": "2025-01-20",
+          "renewalPremium": 840,
+          "daysUntilRenewal": -259,
+          "coverageAmount": 300000,
+          "deductible": 1000
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-003",
+          "policyHolderName": "Michael Brown",
+          "policyHolderEmail": "m.brown@email.com",
+          "policyType": "Life",
+          "currentPremium": 600,
+          "renewalDate": "2025-01-25",
+          "renewalPremium": 630,
+          "daysUntilRenewal": -254,
+          "coverageAmount": 500000,
+          "deductible": 0
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-004",
+          "policyHolderName": "Emily Davis",
+          "policyHolderEmail": "emily.d@email.com",
+          "policyType": "Auto",
+          "currentPremium": 1500,
+          "renewalDate": "2025-02-01",
+          "renewalPremium": 1575,
+          "daysUntilRenewal": -247,
+          "coverageAmount": 75000,
+          "deductible": 750
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-005",
+          "policyHolderName": "Robert Wilson",
+          "policyHolderEmail": "r.wilson@email.com",
+          "policyType": "Health",
+          "currentPremium": 400,
+          "renewalDate": "2025-02-10",
+          "renewalPremium": 420,
+          "daysUntilRenewal": -238,
+          "coverageAmount": 100000,
+          "deductible": 250
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-006",
+          "policyHolderName": "Lisa Anderson",
+          "policyHolderEmail": "lisa.a@email.com",
+          "policyType": "Home",
+          "currentPremium": 950,
+          "renewalDate": "2025-02-15",
+          "renewalPremium": 998,
+          "daysUntilRenewal": -233,
+          "coverageAmount": 400000,
+          "deductible": 1500
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-007",
+          "policyHolderName": "David Martinez",
+          "policyHolderEmail": "d.martinez@email.com",
+          "policyType": "Auto",
+          "currentPremium": 1100,
+          "renewalDate": "2025-02-20",
+          "renewalPremium": 1155,
+          "daysUntilRenewal": -228,
+          "coverageAmount": 60000,
+          "deductible": 500
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-008",
+          "policyHolderName": "Jennifer Taylor",
+          "policyHolderEmail": "j.taylor@email.com",
+          "policyType": "Life",
+          "currentPremium": 750,
+          "renewalDate": "2025-03-01",
+          "renewalPremium": 788,
+          "daysUntilRenewal": -219,
+          "coverageAmount": 750000,
+          "deductible": 0
+        }
+      },
+      {
+        "json": {
+          "policyNumber": "POL-2024-010",
+          "policyHolderName": "Maria Rodriguez",
+          "policyHolderEmail": "m.rodriguez@email.com",
+          "policyType": "Auto",
+          "currentPremium": 1350,
+          "renewalDate": "2025-03-15",
+          "renewalPremium": 1418,
+          "daysUntilRenewal": -205,
+          "coverageAmount": 80000,
+          "deductible": 1000
+        }
+      }
+    ],
+    "Send Renewal Email": [
+      {
+        "json": {
+          "id": "199b6b143e213ea9",
+          "threadId": "199b6b143e213ea9",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b145041aedb",
+          "threadId": "199b6b145041aedb",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b1463009080",
+          "threadId": "199b6b1463009080",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b14782b131c",
+          "threadId": "199b6b14782b131c",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b149e4f2864",
+          "threadId": "199b6b149e4f2864",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b14b60058d0",
+          "threadId": "199b6b14b60058d0",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b14d7830989",
+          "threadId": "199b6b14d7830989",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b14e641a46f",
+          "threadId": "199b6b14e641a46f",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b6b14eb2cbc75",
+          "threadId": "199b6b14eb2cbc75",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Daily Renewal Check": {
+      "main": [
+        [
+          {
+            "node": "Get Policy Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Policy Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Days Until Renewal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Days Until Renewal": {
+      "main": [
+        [
+          {
+            "node": "Check Renewal Eligibility",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Renewal Eligibility": {
+      "main": [
+        [
+          {
+            "node": "Prepare Renewal Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Renewal Data": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Document": {
+      "main": [
+        [
+          {
+            "node": "Send Renewal Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Renewal Email": {
+      "main": [
+        [
+          {
+            "node": "Send for E-Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send for E-Signature": {
+      "main": [
+        [
+          {
+            "node": "Edit Before Sheet Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Before Sheet Update": {
+      "main": [
+        [
+          {
+            "node": "Log Renewal Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "048068af-f621-482f-ac23-0ece863d2037",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "COfyAW9jEM0GwWA2",
+  "tags": []
+}

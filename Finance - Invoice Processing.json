@@ -1,0 +1,393 @@
+{
+  "name": "Finance - Invoice Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        -176
+      ],
+      "id": "53bdca55-3ed6-443f-9fcd-a18d171b56c5",
+      "name": "Monthly Billing"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA",
+          "mode": "list",
+          "cachedResultName": "Client_Billing_Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 734024244,
+          "mode": "list",
+          "cachedResultName": "ClientBilling",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA/edit#gid=734024244"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        -176
+      ],
+      "id": "cc8ed12b-9653-4842-b4f0-0d5bf954d2f2",
+      "name": "Client Billing Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://v2.api2pdf.com/chrome/html",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { html: $json.html, options: { landscape: false, format: \"A4\", printBackground: true, margin: { top: \"0.5in\", bottom: \"0.5in\", left: \"0.5in\", right: \"0.5in\" } } } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -32,
+        -176
+      ],
+      "id": "33fceb49-aa39-4712-bb9a-93a53702471d",
+      "name": "Convert HTML to PDF",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HqXeaqzuMI2uHm6q",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Client Billing Data').item.json.client_email }}",
+        "subject": "=Invoice INV-{{ $('Client Billing Data').item.json.client_id }} - {{ $('Client Billing Data').item.json.client_name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body {\n            font-family: 'Segoe UI', Arial, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 600px;\n            margin: 0 auto;\n            padding: 20px;\n        }\n        .header {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 20px;\n            text-align: center;\n            border-radius: 8px 8px 0 0;\n        }\n        .content {\n            background: #ffffff;\n            padding: 30px;\n            border: 1px solid #e1e8ff;\n            border-top: none;\n        }\n        .invoice-details {\n            background: #f8f9ff;\n            padding: 20px;\n            border-radius: 8px;\n            margin: 20px 0;\n            border-left: 4px solid #667eea;\n        }\n        .detail-row {\n            display: flex;\n            justify-content: space-between;\n            margin: 8px 0;\n        }\n        .label {\n            font-weight: bold;\n            color: #555;\n        }\n        .value {\n            color: #333;\n        }\n        .footer {\n            background: #f8f9ff;\n            padding: 20px;\n            text-align: center;\n            border-radius: 0 0 8px 8px;\n            border: 1px solid #e1e8ff;\n            border-top: none;\n        }\n        .company-signature {\n            margin-top: 20px;\n            color: #666;\n            font-style: italic;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h2>Invoice Notification</h2>\n    </div>\n    \n    <div class=\"content\">\n        <p>Dear <strong>{{ $('Client Billing Data').item.json.client_name }}</strong>,</p>\n        \n        <p>We hope this message finds you well. Please find attached your invoice for the services provided.</p>\n        \n        <div class=\"invoice-details\">\n            <h3 style=\"margin-top: 0; color: #667eea;\">Invoice Summary</h3>\n            \n            <div class=\"detail-row\">\n                <span class=\"label\">Amount:</span>\n                <span class=\"value\">${{ $('Client Billing Data').item.json.amount }} {{ $('Client Billing Data').item.json.currency }}</span>\n            </div>\n            \n            <div class=\"detail-row\">\n                <span class=\"label\">Due Date:</span>\n                <span class=\"value\">{{ $('Client Billing Data').item.json.due_date }}</span>\n            </div>\n            \n            <div class=\"detail-row\">\n                <span class=\"label\">Service:</span>\n                <span class=\"value\">{{ $('Client Billing Data').item.json.service_description }}</span>\n            </div>\n            \n            <div class=\"detail-row\">\n                <span class=\"label\">Payment Terms:</span>\n                <span class=\"value\">{{ $('Client Billing Data').item.json.payment_terms }}</span>\n            </div>\n        </div>\n        \n        <p>The detailed invoice is attached as a PDF file. Please review the invoice and arrange payment by the due date to avoid any late fees.</p>\n        \n        <p>If you have any questions about this invoice or need to discuss payment arrangements, please don't hesitate to contact us.</p>\n    </div>\n    \n    <div class=\"footer\">\n        <p><strong>Thank you for your business!</strong></p>\n        \n        <div class=\"company-signature\">\n            <p>Best regards,<br>\n            <strong>Niazi SoftSystems</strong><br>\n            Email: contact@niazisoftsystems.com<br>\n            Phone: (555) 123-4567</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        -176
+      ],
+      "id": "2c328b35-ad98-4901-8af6-5070328a338c",
+      "name": "Send a message",
+      "webhookId": "d19e6d8e-7f11-4d09-9de8-f6b85b9e1766",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdf }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        -176
+      ],
+      "id": "d3ef5bb4-844d-409c-9774-f50962b0b036",
+      "name": "Download PDF File"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        80
+      ],
+      "id": "ee18d74f-e32c-46b6-8c86-8c48f623d816",
+      "name": "Payment Reminder System"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA",
+          "mode": "list",
+          "cachedResultName": "Client_Billing_Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 734024244,
+          "mode": "list",
+          "cachedResultName": "ClientBilling",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qkma_E9g7cymiJiSPbfCc7vYcx7MeqjUiIaeO4V5FXA/edit#gid=734024244"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -256,
+        80
+      ],
+      "id": "1edecbe5-7526-4bb3-b76d-3277b2cbc7f5",
+      "name": "Check Invoice Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check for overdue invoices (no status column)\nconst items = $input.all();\nconst overdueItems = [];\nconst currentDate = new Date();\n\nconsole.log(`Checking ${items.length} invoices for overdue status...`);\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Skip if no due date\n  if (!data.due_date) continue;\n  \n  // Parse due date\n  const dueDate = new Date(data.due_date);\n  const daysPastDue = Math.floor((currentDate.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));\n  \n  // Only process invoices that are overdue by 3+ days\n  if (daysPastDue >= 3) {\n    data.days_past_due = daysPastDue;\n    \n    // Set reminder type based on days overdue\n    if (daysPastDue >= 30) {\n      data.reminder_type = 'final_notice';\n    } else if (daysPastDue >= 14) {\n      data.reminder_type = 'second_notice';\n    } else {\n      data.reminder_type = 'first_reminder';\n    }\n    \n    // Create reminder subject\n    data.reminder_subject = `Payment Reminder - Invoice INV-${data.client_id} (${daysPastDue} days overdue)`;\n    \n    console.log(`Overdue invoice found: ${data.client_id} - ${daysPastDue} days past due`);\n    overdueItems.push(item);\n  }\n}\n\nconsole.log(`Found ${overdueItems.length} overdue invoices requiring reminders`);\nreturn overdueItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        80
+      ],
+      "id": "76ed9dc4-6d95-426a-8830-dd4fa08931c7",
+      "name": "Check Overdue Invoices"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.client_email }}",
+        "subject": "={{ $json.reminder_subject }}",
+        "message": "=<!DOCTYPE html> <html> <head>     <style>         body { font-family: Arial, sans-serif; padding: 20px; color: #333; }         .header { background: #f44336; color: white; padding: 15px; text-align: center; border-radius: 5px; }         .content { background: #fff; padding: 20px; border: 1px solid #ddd; margin: 15px 0; }         .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }         .footer { color: #666; font-size: 12px; text-align: center; margin-top: 20px; }     </style> </head> <body>     <div class=\"header\">         <h2>Payment Reminder Notice</h2>     </div>          <div class=\"content\">         <p>Dear {{ $json.client_name }},</p>                  <p>This is a <strong>{{ $json.reminder_type }}</strong> that your invoice is now <strong>{{ $json.days_past_due }} days overdue</strong>.</p>                  <div class=\"warning\">             <h3>Invoice Details:</h3>             <p><strong>Invoice Number:</strong> INV-{{ $json.client_id }}</p>             <p><strong>Amount Due:</strong> ${{ $json.amount }} {{ $json.currency }}</p>             <p><strong>Original Due Date:</strong> {{ $json.due_date }}</p>             <p><strong>Days Overdue:</strong> {{ $json.days_past_due }}</p>         </div>                  <p>Please arrange payment immediately to avoid additional late fees or collection action.</p>                  <p>If you have already sent payment, please disregard this notice. If you need to discuss payment arrangements, contact us immediately.</p>     </div>          <div class=\"footer\">         <p>Thank you for your prompt attention to this matter.</p>         <p>Your Company Name | billing@yourcompany.com | (555) 123-4567</p>     </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        80
+      ],
+      "id": "a2d5366f-a153-4336-b432-0235dda9cbdc",
+      "name": "Send Payment Reminders",
+      "webhookId": "343e1bf3-8090-4bed-b4a3-db2f35fe99b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qCOVQZBYwJ9KlLQD",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n    <title>Invoice</title>\n    <style>\n        * {\n            box-sizing: border-box;\n        }\n        \n        body { \n            font-family: 'Segoe UI', Arial, sans-serif; \n            padding: 20px; \n            margin: 0;\n            background: white;\n            color: #333;\n            line-height: 1.4;\n        }\n        \n        .invoice-container {\n            background: white;\n            border-radius: 8px;\n            border: 2px solid #667eea;\n            overflow: hidden;\n            max-width: 750px;\n            margin: 0 auto;\n            page-break-inside: avoid;\n        }\n        \n        .header { \n            background: #667eea;\n            color: white;\n            text-align: center; \n            padding: 25px 20px;\n        }\n        \n        .header h1 {\n            margin: 0 0 8px 0;\n            font-size: 28px;\n            font-weight: 600;\n            letter-spacing: 1px;\n        }\n        \n        .header h2 {\n            margin: 0;\n            font-size: 16px;\n            opacity: 0.9;\n            font-weight: 400;\n        }\n        \n        .content {\n            padding: 30px 25px;\n        }\n        \n        .info-section { \n            display: flex; \n            justify-content: space-between; \n            margin: 20px 0;\n            background: #f8f9ff;\n            padding: 20px;\n            border-radius: 6px;\n            border-left: 4px solid #667eea;\n        }\n        \n        .bill-to, .invoice-details {\n            flex: 1;\n        }\n        \n        .bill-to {\n            margin-right: 20px;\n        }\n        \n        .bill-to h3, .invoice-details h3 {\n            color: #667eea;\n            margin: 0 0 12px 0;\n            font-size: 14px;\n            font-weight: 600;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }\n        \n        .bill-to p, .invoice-details p {\n            margin: 6px 0;\n            color: #555;\n            font-size: 14px;\n        }\n        \n        .divider {\n            height: 1px;\n            background: #e1e8ff;\n            margin: 25px 0;\n        }\n        \n        .service-section {\n            background: #fff;\n            border: 1px solid #e1e8ff;\n            border-radius: 6px;\n            padding: 20px;\n            margin: 20px 0;\n        }\n        \n        .service-section h3 {\n            color: #667eea;\n            margin: 0 0 12px 0;\n            font-size: 16px;\n            font-weight: 600;\n        }\n        \n        .service-description {\n            font-size: 14px;\n            color: #444;\n            margin-bottom: 20px;\n        }\n        \n        .amount-display {\n            background: #667eea;\n            color: white;\n            padding: 18px;\n            border-radius: 6px;\n            text-align: center;\n        }\n        \n        .amount-label {\n            font-size: 12px;\n            opacity: 0.9;\n            margin-bottom: 4px;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }\n        \n        .amount-value {\n            font-size: 24px;\n            font-weight: bold;\n            margin: 0;\n        }\n        \n        .footer {\n            background: #f8f9ff;\n            padding: 20px;\n            text-align: center;\n            color: #666;\n            font-size: 12px;\n            border-top: 1px solid #e1e8ff;\n        }\n        \n        .footer p {\n            margin: 8px 0;\n        }\n        \n        /* PDF-specific optimizations */\n        @media print {\n            body {\n                background: white !important;\n                padding: 10px;\n            }\n            \n            .invoice-container {\n                page-break-inside: avoid;\n                break-inside: avoid;\n            }\n            \n            .header {\n                page-break-after: avoid;\n            }\n            \n            .content {\n                page-break-before: avoid;\n                page-break-after: avoid;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"invoice-container\">\n        <div class=\"header\">\n            <h1>INVOICE</h1>\n            <h2>INV-{{ $json.client_id }}</h2>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"info-section\">\n                <div class=\"bill-to\">\n                    <h3>Bill To</h3>\n                    <p><strong>{{ $json.client_name }}</strong></p>\n                    <p>{{ $json.client_email }}</p>\n                    <p>{{ $json.billing_address }}</p>\n                </div>\n                <div class=\"invoice-details\">\n                    <h3>Invoice Details</h3>\n                    <p><strong>Date:</strong> {{ $json.invoice_date }}</p>\n                    <p><strong>Due Date:</strong> {{ $json.due_date }}</p>\n                    <p><strong>Terms:</strong> {{ $json.payment_terms }}</p>\n                    <p><strong>Project:</strong> {{ $json.project_code }}</p>\n                </div>\n            </div>\n            \n            <div class=\"divider\"></div>\n            \n            <div class=\"service-section\">\n                <h3>Service Provided</h3>\n                <div class=\"service-description\">\n                    {{ $json.service_description }}\n                </div>\n                \n                <div class=\"amount-display\">\n                    <div class=\"amount-label\">Total Amount</div>\n                    <div class=\"amount-value\">${{ $json.amount }} {{ $json.currency }}</div>\n                </div>\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <p>Thank you for your business! Please remit payment by the due date.</p>\n            <p>For questions, contact us at billing@yourcompany.com</p>\n        </div>\n    </div>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        -176
+      ],
+      "id": "8d4cb73b-fd93-4b23-9e54-7f3b45e24511",
+      "name": "Generate Invoice Template"
+    },
+    {
+      "parameters": {
+        "resource": "invoice",
+        "operation": "create",
+        "Line": [],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.quickbooks",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -176
+      ],
+      "id": "6b3ced91-6280-4695-90ab-69bec8c8f3f2",
+      "name": "Record in Accounting",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Monthly Billing": {
+      "main": [
+        [
+          {
+            "node": "Client Billing Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Billing Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF": {
+      "main": [
+        [
+          {
+            "node": "Download PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF File": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Record in Accounting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment Reminder System": {
+      "main": [
+        [
+          {
+            "node": "Check Invoice Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Invoice Status": {
+      "main": [
+        [
+          {
+            "node": "Check Overdue Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Overdue Invoices": {
+      "main": [
+        [
+          {
+            "node": "Send Payment Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice Template": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0b80f3ab-871b-4a7b-88c8-81210e7325df",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "RaM9SX16IuKUH0BL",
+  "tags": []
+}

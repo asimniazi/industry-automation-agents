@@ -1,0 +1,1666 @@
+{
+  "name": "HR - Employee Onboarding System with WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-hire",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "2ea8f4e3-f97c-44d2-a9b2-48e9de577bcd",
+      "name": "New Hire Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        896,
+        416
+      ],
+      "webhookId": "hr-onboarding-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "employee-id",
+              "name": "employeeId",
+              "value": "={{ $json.employeeId || 'EMP-' + Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "first-name",
+              "name": "firstName",
+              "value": "={{ $json.firstName }}",
+              "type": "string"
+            },
+            {
+              "id": "last-name",
+              "name": "lastName",
+              "value": "={{ $json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "position",
+              "name": "position",
+              "value": "={{ $json.position }}",
+              "type": "string"
+            },
+            {
+              "id": "department",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "manager",
+              "name": "manager",
+              "value": "={{ $json.manager }}",
+              "type": "string"
+            },
+            {
+              "id": "start-date",
+              "name": "startDate",
+              "value": "={{ $json.startDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "salary",
+              "name": "salary",
+              "value": "={{ $json.salary }}",
+              "type": "string"
+            },
+            {
+              "id": "employment-type",
+              "name": "employmentType",
+              "value": "={{ $json.employmentType || 'Full-Time' }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "Onboarding",
+              "type": "string"
+            },
+            {
+              "id": "onboarding-date",
+              "name": "onboardingDate",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "temp-password",
+              "name": "temporaryPassword",
+              "value": "={{ 'Welcome' + Math.random().toString(36).substring(2, 10).toUpperCase() + '!' }}",
+              "type": "string"
+            },
+            {
+              "id": "manager-email",
+              "name": "managerEmail",
+              "value": "={{ $json.managerEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "manager-phone",
+              "name": "managerPhone",
+              "value": "={{ $json.managerPhone }}",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.company || 'TechCorp Solutions' }}",
+              "type": "string"
+            },
+            {
+              "id": "bio",
+              "name": "bio",
+              "value": "={{ $json.bio || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e9758e06-996a-4710-98c9-23e5866c6d99",
+      "name": "Format Employee Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fHq-jB8Prw__Bwc1tObgq3nPwk3Vs7btE7sLhojLHmY",
+          "mode": "list",
+          "cachedResultName": "Employees",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fHq-jB8Prw__Bwc1tObgq3nPwk3Vs7btE7sLhojLHmY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fHq-jB8Prw__Bwc1tObgq3nPwk3Vs7btE7sLhojLHmY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "employeeId",
+              "displayName": "employeeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "firstName",
+              "displayName": "firstName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lastName",
+              "displayName": "lastName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "manager",
+              "displayName": "manager",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startDate",
+              "displayName": "startDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employmentType",
+              "displayName": "employmentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onboardingDate",
+              "displayName": "onboardingDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "temporaryPassword",
+              "displayName": "temporaryPassword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeData",
+              "displayName": "employeeData",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "managerEmail",
+              "displayName": "managerEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "managerPhone",
+              "displayName": "managerPhone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bio",
+              "displayName": "bio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ff5df06f-0abe-48ef-8b9b-557e2d53000a",
+      "name": "Create Employee Profile (HRIS)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format Employee Data').item.json.employeeData.email }}",
+        "subject": "=Welcome to {{ $('Format Employee Data').item.json.employeeData.company || 'TechCorp Solutions' }}! 🎉",
+        "message": "=<h2>Welcome Aboard, {{ $('Format Employee Data').item.json.employeeData.firstName }}!</h2>\n\n<p>We're thrilled to have you join our team as <strong>{{ $('Format Employee Data').item.json.employeeData.position }}</strong> in the <strong>{{ $('Format Employee Data').item.json.employeeData.department }}</strong> department.</p>\n\n<h3>Your First Day Details:</h3>\n<ul style=\"line-height: 1.8;\">\n  <li><strong>Start Date:</strong> {{ new Date($('Format Employee Data').item.json.startDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</li>\n  <li><strong>Reporting Time:</strong> 9:00 AM</li>\n  <li><strong>Location:</strong> Main Office, Reception Desk</li>\n  <li><strong>Reporting Manager:</strong> {{ $('Format Employee Data').item.json.employeeData.manager }}</li>\n  <li><strong>Employee ID:</strong> {{ $('Format Employee Data').item.json.employeeId }}</li>\n</ul>\n\n<h3>Temporary Login Credentials:</h3>\n<div style=\"background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n  <p><strong>Email:</strong> {{ $('Format Employee Data').item.json.employeeData.email }}</p>\n  <p><strong>Temporary Password:</strong> <code>{{ $('Format Employee Data').item.json.temporaryPassword }}</code></p>\n  <p style=\"color: #666; font-size: 0.9em;\">Please change your password on first login</p>\n</div>\n\n<h3>What to Bring:</h3>\n<ul>\n  <li>Government-issued ID</li>\n  <li>Bank account details for payroll</li>\n  <li>Emergency contact information</li>\n  <li>Any professional certificates (if applicable)</li>\n</ul>\n\n<h3>Your Onboarding Schedule:</h3>\n<p>Over the next few days, you'll receive:</p>\n<ol>\n  <li><strong>Day 1:</strong> This welcome email & account setup</li>\n  <li><strong>Day 3:</strong> Team introduction & resources</li>\n  <li><strong>Day 7:</strong> First week check-in & training schedule</li>\n</ol>\n\n<h3>Documents to Complete:</h3>\n<p>You'll receive a separate email with links to complete:</p>\n<ul>\n  <li>Employment Agreement</li>\n  <li>Tax Forms</li>\n  <li>Benefits Enrollment</li>\n  <li>Emergency Contacts</li>\n  <li>IT Equipment Agreement</li>\n</ul>\n\n<p>If you have any questions before your start date, please don't hesitate to reach out to HR at hr@techcorp.com or your manager at {{ $('Format Employee Data').item.json.employeeData.managerEmail }}.</p>\n\n<p>We look forward to seeing you soon!</p>\n\n<p>Best regards,<br>\n<strong>Human Resources Team</strong><br>\nTechCorp Solutions</p>\n\n<hr style=\"margin-top: 40px; border: none; border-top: 1px solid #ddd;\">\n<p style=\"font-size: 0.8em; color: #666;\">This is an automated message from the HR Onboarding System.</p>",
+        "options": {
+          "replyTo": "hr@techcorp.com"
+        }
+      },
+      "id": "62ed1554-905b-4725-85ab-e86c982dbff0",
+      "name": "Welcome Email (Day 1)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        -64
+      ],
+      "webhookId": "acbb4575-bfdd-4f85-be6f-99455059c7a7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.green-api.com/waInstance{{ $credentials.instanceId }}/sendMessage/{{ $credentials.apiToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatId\": \"{{ $('Format Employee Data').item.json.phone.replace('+', '') }}@c.us\",\n  \"message\": \"🎉 *Welcome to TechCorp Solutions!*\\n\\n*Dear {{ $('Format Employee Data').item.json.firstName }},*\\n\\nWe're excited to have you join us as *{{ $('Format Employee Data').item.json.position }}*!\\n\\n📅 *Start Date:* {{ new Date($('Format Employee Data').item.json.startDate).toLocaleDateString() }}\\n📍 *Location:* Main Office\\n⏰ *Time:* 9:00 AM\\n👤 *Manager:* {{ $('Format Employee Data').item.json.manager }}\\n🆔 *Employee ID:* {{ $('Format Employee Data').item.json.employeeId }}\\n\\n📧 *Temporary Password:* {{ $('Format Employee Data').item.json.temporaryPassword }}\\n\\nPlease check your email for detailed information and documents to complete.\\n\\nLooking forward to meeting you!\\n\\n*HR Team*\\nTechCorp Solutions\"\n}",
+        "options": {}
+      },
+      "id": "4c91429c-4183-435b-911e-1969793805ce",
+      "name": "WhatsApp Welcome Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "id": "247cdc9a-baa4-4251-94ff-ebb9bc4e8989",
+      "name": "Wait 3 Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -64
+      ],
+      "webhookId": "wait-3-days"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format Employee Data').item.json.employeeData.email }}",
+        "subject": "=Day 3: Meet Your Team & Access Resources 🤝",
+        "message": "=<h2>Hello {{ $('Format Employee Data').item.json.employeeData.firstName }},</h2>\n\n<p>As you prepare for your first day with us, we wanted to introduce you to your team and provide access to important resources.</p>\n\n<h3>Your Team Members:</h3>\n<div style=\"background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n  <p><strong>Department:</strong> {{ $('Format Employee Data').item.json.employeeData.department }}</p>\n  <p><strong>Team Size:</strong> 8 members</p>\n  <p><strong>Direct Manager:</strong> {{ $('Format Employee Data').item.json.employeeData.manager }}</p>\n  <p><strong>Team Meeting:</strong> Every Monday at 10:00 AM</p>\n</div>\n\n<h3>Key Resources:</h3>\n<ul style=\"line-height: 2;\">\n  <li>📚 <strong>Employee Handbook:</strong> <a href=\"https://docs.google.com/document/d/HANDBOOK_DOC_ID\">Access Here</a></li>\n  <li>💼 <strong>Company Policies:</strong> <a href=\"https://docs.google.com/document/d/POLICIES_DOC_ID\">View Policies</a></li>\n  <li>🎯 <strong>Department Goals:</strong> <a href=\"https://docs.google.com/document/d/GOALS_DOC_ID\">Current Quarter Goals</a></li>\n  <li>📊 <strong>Org Chart:</strong> <a href=\"https://docs.google.com/document/d/ORGCHART_DOC_ID\">View Structure</a></li>\n  <li>🛠️ <strong>IT Setup Guide:</strong> <a href=\"https://docs.google.com/document/d/IT_GUIDE_DOC_ID\">Technical Setup</a></li>\n</ul>\n\n<h3>Communication Channels:</h3>\n<p>You'll be added to the following on your first day:</p>\n<ul>\n  <li><strong>Email Groups:</strong> team@techcorp.com, all-hands@techcorp.com</li>\n  <li><strong>Chat Channels:</strong> #general, #{{ $('Format Employee Data').item.json.employeeData.department.toLowerCase().replace(' ', '-') }}, #new-employees</li>\n  <li><strong>Project Management:</strong> Access to project boards</li>\n</ul>\n\n<h3>Your Buddy:</h3>\n<p>We've assigned you an onboarding buddy to help you settle in:</p>\n<div style=\"background-color: #e8f4f8; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;\">\n  <p><strong>Name:</strong> Sarah Johnson</p>\n  <p><strong>Role:</strong> Senior {{ $('Format Employee Data').item.json.employeeData.position }}</p>\n  <p><strong>Email:</strong> sarah.johnson@techcorp.com</p>\n  <p>Sarah will reach out to you soon to introduce herself and answer any questions!</p>\n</div>\n\n<p>Looking forward to welcoming you to the team!</p>\n\n<p>Warm regards,<br>\n<strong>{{ $('Format Employee Data').item.json.employeeData.manager }}</strong><br>\n{{ $('Format Employee Data').item.json.employeeData.department }} Department</p>",
+        "options": {}
+      },
+      "id": "a74029ae-aaf3-49cc-8760-cfb1426c33c0",
+      "name": "Team Introduction (Day 3)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2016,
+        -64
+      ],
+      "webhookId": "dbf3f319-e39d-47bc-a963-f797c0787c3a"
+    },
+    {
+      "parameters": {
+        "amount": 4,
+        "unit": "days"
+      },
+      "id": "4999abab-0f36-4a65-8052-21532cb7f1fb",
+      "name": "Wait 4 More Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        -64
+      ],
+      "webhookId": "wait-4-more-days"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format Employee Data').item.json.employeeData.email }}",
+        "subject": "=Week 1 Check-in & Training Schedule 📅",
+        "message": "=<h2>Hi {{ $('Format Employee Data').item.json.employeeData.firstName }},</h2>\n\n<p>Your first day is almost here! Here's your training schedule and important information for your first week.</p>\n\n<h3>📅 First Week Training Schedule:</h3>\n<table style=\"width: 100%; border-collapse: collapse; margin: 20px 0;\">\n  <tr style=\"background-color: #f2f2f2;\">\n    <th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Day</th>\n    <th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Time</th>\n    <th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Activity</th>\n    <th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Location</th>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Monday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">9:00 AM - 12:00 PM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">HR Orientation & Paperwork</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">HR Conference Room</td>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Monday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">2:00 PM - 4:00 PM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">IT Setup & Security Training</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">IT Department</td>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Tuesday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">10:00 AM - 11:30 AM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Department Overview</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Team Meeting Room</td>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Wednesday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">9:00 AM - 10:00 AM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">1-on-1 with Manager</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Manager's Office</td>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Thursday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">2:00 PM - 3:30 PM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Product/Service Training</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Training Room A</td>\n  </tr>\n  <tr>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\"><strong>Friday</strong></td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">3:00 PM - 4:00 PM</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">Week 1 Review & Q&A</td>\n    <td style=\"border: 1px solid #ddd; padding: 12px;\">HR Conference Room</td>\n  </tr>\n</table>\n\n<p>We're excited to have you join us!</p>\n\n<p>Best wishes,<br>\n<strong>HR Team & {{ $('Format Employee Data').item.json.employeeData.manager }}</strong></p>",
+        "options": {}
+      },
+      "id": "6478cbce-bc45-4134-b2fa-edfcfc103f2f",
+      "name": "Week 1 Check-in (Day 7)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2464,
+        -64
+      ],
+      "webhookId": "cb941f5e-d5da-4cfe-a7de-fa28c7c86ac7"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format Employee Data').item.json.employeeData.email }}",
+        "subject": "=Important: Complete Your Onboarding Documents 📝",
+        "message": "=<h2>Hi {{ $('Format Employee Data').item.json.employeeData.firstName }},</h2>\n\n<p>Please complete the following onboarding documents before your first day:</p>\n\n<h3>📋 Required Documents:</h3>\n<div style=\"background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n  <ol style=\"line-height: 2;\">\n    <li><strong>Personal Information Form</strong><br>\n    <a href=\"https://forms.google.com/PERSONAL_INFO_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n    \n    <li><strong>Tax Information</strong><br>\n    <a href=\"https://forms.google.com/TAX_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n    \n    <li><strong>Emergency Contact Details</strong><br>\n    <a href=\"https://forms.google.com/EMERGENCY_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n    \n    <li><strong>Direct Deposit Information</strong><br>\n    <a href=\"https://forms.google.com/BANK_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n    \n    <li><strong>IT Equipment Agreement</strong><br>\n    <a href=\"https://forms.google.com/IT_AGREEMENT_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n    \n    <li><strong>Confidentiality Agreement</strong><br>\n    <a href=\"https://forms.google.com/NDA_FORM_ID\" style=\"background-color: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 5px 0;\">Complete Form</a></li>\n  </ol>\n</div>\n\n<h3>⏰ Deadline:</h3>\n<p style=\"color: #d32f2f; font-weight: bold;\">Please complete all forms by {{ new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>\n\n<p>Thank you!</p>\n\n<p>Best regards,<br>\n<strong>HR Department</strong></p>",
+        "options": {}
+      },
+      "id": "44814270-e64b-4d41-a46f-d6a1ae5d5dfd",
+      "name": "Send Document Forms",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        656
+      ],
+      "webhookId": "d1cff932-831a-4630-b00f-ec3c1a9aad15"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "meetingId",
+              "name": "meetingId",
+              "value": "=MEET-{{ Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "=Orientation Meeting - {{ $('Format Employee Data').item.json.firstName }} {{ $('Format Employee Data').item.json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "employeeId",
+              "name": "employeeId",
+              "value": "={{ $('Format Employee Data').item.json.employeeId }}",
+              "type": "string"
+            },
+            {
+              "id": "employeeName",
+              "name": "employeeName",
+              "value": "={{ $('Format Employee Data').item.json.firstName }} {{ $('Format Employee Data').item.json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "date",
+              "name": "date",
+              "value": "={{ new Date($('Format Employee Data').item.json.startDate).toLocaleDateString() }}",
+              "type": "string"
+            },
+            {
+              "id": "time",
+              "name": "time",
+              "value": "9:00 AM - 11:00 AM",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "HR Conference Room",
+              "type": "string"
+            },
+            {
+              "id": "attendees",
+              "name": "attendees",
+              "value": "={{ $('Format Employee Data').item.json.email }}, {{ $('Format Employee Data').item.json.managerEmail }}, hr@techcorp.com",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "type",
+              "value": "Orientation",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "Scheduled",
+              "type": "string"
+            },
+            {
+              "id": "notes",
+              "name": "notes",
+              "value": "Welcome orientation covering company overview, policies, benefits, and Q&A",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f6ebdb8b-f925-4971-9b7d-db4ec2bd8e47",
+      "name": "Edit Orientation Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs",
+          "mode": "list",
+          "cachedResultName": "Meetings Schedule",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "meetingId",
+              "displayName": "meetingId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeId",
+              "displayName": "employeeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeName",
+              "displayName": "employeeName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attendees",
+              "displayName": "attendees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeData",
+              "displayName": "employeeData",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onboardingDate",
+              "displayName": "onboardingDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startDate",
+              "displayName": "startDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "temporaryPassword",
+              "displayName": "temporaryPassword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6ff32cfc-eb5a-4c8d-8094-da87d4671751",
+      "name": "Schedule Orientation Meeting",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1792,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "meetingId",
+              "name": "meetingId",
+              "value": "=MEET-{{ Date.now() + 1 }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "=Manager 1-on-1 - {{ $('Create Employee Profile (HRIS)').item.json.manager }}",
+              "type": "string"
+            },
+            {
+              "id": "employeeId",
+              "name": "employeeId",
+              "value": "={{ $('Format Employee Data').item.json.employeeId }}",
+              "type": "string"
+            },
+            {
+              "id": "employeeName",
+              "name": "employeeName",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.firstName }}{{ $('Create Employee Profile (HRIS)').item.json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "date",
+              "name": "date",
+              "value": "={{ new Date(new Date($('Format Employee Data').item.json.startDate).getTime() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString() }}",
+              "type": "string"
+            },
+            {
+              "id": "time",
+              "name": "time",
+              "value": "2:00 PM - 3:00 PM",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "Manager's Office",
+              "type": "string"
+            },
+            {
+              "id": "attendees",
+              "name": "attendees",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.firstName }}{{ $('Create Employee Profile (HRIS)').item.json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "type",
+              "value": "1-on-1",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "Scheduled",
+              "type": "string"
+            },
+            {
+              "id": "notes",
+              "name": "notes",
+              "value": "First week check-in: role expectations, initial projects, team dynamics, 30-60-90 day plan",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "65961a7f-e686-4db3-99d4-bb369ccfc1c4",
+      "name": "Edit Manager Meeting Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2016,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs",
+          "mode": "list",
+          "cachedResultName": "Meetings Schedule",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CdWXBRH6PaMi1vXN0K_lKXasXOIGieSQum5G_dYkMOs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "meetingId",
+              "displayName": "meetingId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeId",
+              "displayName": "employeeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeName",
+              "displayName": "employeeName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attendees",
+              "displayName": "attendees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employeeData",
+              "displayName": "employeeData",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onboardingDate",
+              "displayName": "onboardingDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startDate",
+              "displayName": "startDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "temporaryPassword",
+              "displayName": "temporaryPassword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "944667e1-1c09-4ecd-afbc-c0074fe51bbc",
+      "name": "Schedule Manager Meeting",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2240,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.green-api.com/waInstance{{ $credentials.instanceId }}/sendMessage/{{ $credentials.apiToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatId\": \"{{ $('Format Employee Data').item.json.employeeData.managerPhone.replace('+', '') }}@c.us\",\n  \"message\": \"📢 *New Team Member Alert*\\n\\n*Manager:* {{ $('Format Employee Data').item.json.employeeData.manager }}\\n\\nYou have a new team member joining:\\n\\n👤 *Name:* {{ $('Format Employee Data').item.json.employeeData.firstName }} {{ $('Format Employee Data').item.json.employeeData.lastName }}\\n💼 *Position:* {{ $('Format Employee Data').item.json.employeeData.position }}\\n📅 *Start Date:* {{ new Date($('Format Employee Data').item.json.startDate).toLocaleDateString() }}\\n📧 *Email:* {{ $('Format Employee Data').item.json.employeeData.email }}\\n🆔 *Employee ID:* {{ $('Format Employee Data').item.json.employeeId }}\\n\\n*Scheduled Meetings:*\\n• Orientation: Day 1 (9:00 AM)\\n• 1-on-1: Day 3 (2:00 PM)\\n\\nPlease prepare for their arrival and first week activities.\\n\\n*HR Team*\"\n}",
+        "options": {}
+      },
+      "id": "19851615-4a82-451c-afbd-f0ec35550d6b",
+      "name": "WhatsApp Manager Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format Employee Data').item.json.employeeData.department.toLowerCase().replace(' ', '-') }}@techcorp.com",
+        "subject": "=🎉 Welcome Our New Team Member - {{ $('Format Employee Data').item.json.employeeData.firstName }} {{ $('Format Employee Data').item.json.employeeData.lastName }}",
+        "message": "=<h2>Team, please welcome our newest member!</h2>\n\n<div style=\"background-color: #f0f8ff; padding: 20px; border-radius: 10px; margin: 20px 0;\">\n  <h3 style=\"color: #2c5282;\">{{ $('Format Employee Data').item.json.employeeData.firstName }} {{ $('Format Employee Data').item.json.employeeData.lastName }}</h3>\n  <p><strong>Position:</strong> {{ $('Format Employee Data').item.json.employeeData.position }}</p>\n  <p><strong>Department:</strong> {{ $('Format Employee Data').item.json.employeeData.department }}</p>\n  <p><strong>Start Date:</strong> {{ new Date($('Format Employee Data').item.json.startDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>\n  <p><strong>Email:</strong> {{ $('Format Employee Data').item.json.employeeData.email }}</p>\n  <p><strong>Reports to:</strong> {{ $('Format Employee Data').item.json.employeeData.manager }}</p>\n</div>\n\n<h3>About {{ $('Format Employee Data').item.json.employeeData.firstName }}:</h3>\n<p>{{ $('Format Employee Data').item.json.employeeData.bio || 'Will be joining us to strengthen our team and bring fresh perspectives to our projects.' }}</p>\n\n<h3>How You Can Help:</h3>\n<ul>\n  <li>Send a welcome message</li>\n  <li>Invite them to team lunch on their first week</li>\n  <li>Share helpful resources and documentation</li>\n  <li>Be available for questions</li>\n  <li>Include them in relevant meetings and discussions</li>\n</ul>\n\n<p>Let's all make {{ $('Format Employee Data').item.json.employeeData.firstName }} feel welcome!</p>\n\n<p>Best regards,<br>\n<strong>{{ $('Format Employee Data').item.json.employeeData.manager }}</strong><br>\n{{ $('Format Employee Data').item.json.employeeData.department }} Department Head</p>",
+        "options": {}
+      },
+      "id": "07d73089-ebb1-4681-bcc6-86f66b24dcb9",
+      "name": "Team Introduction Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2240,
+        512
+      ],
+      "webhookId": "9a44c16b-1411-45d6-86ce-1a8dae157d69"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "employeeId",
+              "name": "employeeId",
+              "value": "={{ $('Format Employee Data').item.json.employeeId }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "name",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.firstName }}{{ $('Create Employee Profile (HRIS)').item.json.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "position",
+              "name": "=position",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.position }}",
+              "type": "string"
+            },
+            {
+              "id": "department",
+              "name": "department",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "manager",
+              "name": "manager",
+              "value": "={{ $('Create Employee Profile (HRIS)').item.json.manager }}",
+              "type": "string"
+            },
+            {
+              "id": "startDate",
+              "name": "startDate",
+              "value": "={{ $('Format Employee Data').item.json.startDate }}",
+              "type": "string"
+            },
+            {
+              "id": "onboardingStarted",
+              "name": "onboardingStarted",
+              "value": "={{ $('Format Employee Data').item.json.onboardingDate }}",
+              "type": "string"
+            },
+            {
+              "id": "welcomeEmailSent",
+              "name": "welcomeEmailSent",
+              "value": "Yes",
+              "type": "string"
+            },
+            {
+              "id": "whatsappSent",
+              "name": "whatsappSent",
+              "value": "Yes",
+              "type": "string"
+            },
+            {
+              "id": "documentsStatus",
+              "name": "documentsStatus",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "orientationScheduled",
+              "name": "orientationScheduled",
+              "value": "Yes",
+              "type": "string"
+            },
+            {
+              "id": "managerMeetingScheduled",
+              "name": "managerMeetingScheduled",
+              "value": "Yes",
+              "type": "string"
+            },
+            {
+              "id": "teamNotified",
+              "name": "teamNotified",
+              "value": "Yes",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "In Progress",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f1232e61-9ebf-49cc-8d53-e0415fb7756d",
+      "name": "Edit Tracker Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2464,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1EK0lzQk6l9CzZasszoIUPJsHpMl2Omcfeqdp06APPWU",
+          "mode": "list",
+          "cachedResultName": "OnboardingTracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EK0lzQk6l9CzZasszoIUPJsHpMl2Omcfeqdp06APPWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EK0lzQk6l9CzZasszoIUPJsHpMl2Omcfeqdp06APPWU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "employeeId",
+              "displayName": "employeeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "manager",
+              "displayName": "manager",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startDate",
+              "displayName": "startDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onboardingStarted",
+              "displayName": "onboardingStarted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "welcomeEmailSent",
+              "displayName": "welcomeEmailSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "whatsappSent",
+              "displayName": "whatsappSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "documentsStatus",
+              "displayName": "documentsStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "orientationScheduled",
+              "displayName": "orientationScheduled",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "managerMeetingScheduled",
+              "displayName": "managerMeetingScheduled",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "teamNotified",
+              "displayName": "teamNotified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "HR Manager",
+              "displayName": "HR Manager",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a0b435c1-5b64-43e9-a7c6-723f15e63573",
+      "name": "Update Onboarding Tracker",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2688,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"employeeId\": \"{{ $('Format Employee Data').item.json.employeeId }}\",\n  \"message\": \"Employee onboarding process initiated successfully\",\n  \"details\": {\n    \"name\": \"{{ $('Format Employee Data').item.json.employeeData.firstName }} {{ $('Format Employee Data').item.json.employeeData.lastName }}\",\n    \"position\": \"{{ $('Format Employee Data').item.json.employeeData.position }}\",\n    \"department\": \"{{ $('Format Employee Data').item.json.employeeData.department }}\",\n    \"startDate\": \"{{ $('Format Employee Data').item.json.startDate }}\",\n    \"temporaryPassword\": \"{{ $('Format Employee Data').item.json.temporaryPassword }}\",\n    \"onboardingTasks\": [\n      \"Employee profile created in HRIS\",\n      \"Welcome email sent\",\n      \"WhatsApp notification sent\",\n      \"Document forms sent\",\n      \"Orientation meeting scheduled\",\n      \"Manager meeting scheduled\",\n      \"Team notification sent\",\n      \"Onboarding tracker updated\"\n    ]\n  }\n}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "184e7c5d-1d0f-4ac6-8829-7f11743d4013",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2912,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## HR Employee Onboarding Workflow v2\n\n### Key Updates:\n✅ Replaced deprecated calendar nodes with Google Sheets\n✅ Added WhatsApp notifications via Green API\n✅ All services are 100% FREE\n✅ Complete meeting tracking system\n\n### Services Used:\n- **Google Sheets** - HRIS, Meeting Scheduler, Tracker\n- **Gmail** - Email automation\n- **Google Forms** - Document collection\n- **Green API** - WhatsApp notifications\n\n### Workflow Features:\n1. Automated employee profile creation\n2. Multi-day email sequence (Days 1, 3, 7)\n3. WhatsApp notifications to employee & manager\n4. Meeting scheduling & tracking\n5. Document collection via forms\n6. Team announcements\n7. Complete onboarding progress tracking\n\n### Required Sheets:\n- Employee Database\n- Meetings Schedule\n- Onboarding Tracker",
+        "height": 500,
+        "width": 400,
+        "color": 7
+      },
+      "id": "75a6de7e-20d9-491e-993a-9dbb036fa2f4",
+      "name": "Workflow Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -272
+      ]
+    }
+  ],
+  "pinData": {
+    "New Hire Trigger": [
+      {
+        "json": {
+          "firstName": "Sana",
+          "lastName": "Ahmed",
+          "email": "sana.ahmed@techcorp.com",
+          "phone": "+923336667777",
+          "position": "HR Manager",
+          "department": "Human Resources",
+          "manager": "Jennifer Brown",
+          "managerEmail": "jennifer.brown@techcorp.com",
+          "managerPhone": "+923009999993",
+          "salary": "85000",
+          "employmentType": "Full-Time",
+          "startDate": "2024-02-28T09:00:00Z",
+          "company": "TechCorp Solutions",
+          "bio": "Sana specializes in talent acquisition and employee engagement with 5 years of HR experience."
+        }
+      }
+    ],
+    "Schedule Manager Meeting": [
+      {
+        "json": {
+          "meetingId": "MEET-1759300256949",
+          "title": "Manager 1-on-1 - Jennifer Brown",
+          "employeeId": "EMP-1759299938788",
+          "employeeName": "SanaAhmed",
+          "date": "3/1/2024",
+          "time": "2:00 PM - 3:00 PM",
+          "location": "Manager's Office",
+          "attendees": "SanaAhmed",
+          "type": "1-on-1",
+          "status": "Scheduled",
+          "notes": "First week check-in: role expectations, initial projects, team dynamics, 30-60-90 day plan"
+        }
+      }
+    ],
+    "Success Response": [
+      {
+        "json": {
+          "employeeId": "EMP-1759299938788",
+          "name": "SanaAhmed",
+          "email": "sana.ahmed@techcorp.com",
+          "phone": "+923336667777",
+          "position": "HR Manager",
+          "department": "Human Resources",
+          "manager": "Jennifer Brown",
+          "startDate": "2024-02-28T09:00:00Z",
+          "onboardingStarted": "2025-10-01T06:25:38.812Z",
+          "welcomeEmailSent": "Yes",
+          "whatsappSent": "Yes",
+          "documentsStatus": "Sent",
+          "orientationScheduled": "Yes",
+          "managerMeetingScheduled": "Yes",
+          "teamNotified": "Yes",
+          "status": "In Progress"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "New Hire Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Employee Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Employee Data": {
+      "main": [
+        [
+          {
+            "node": "Create Employee Profile (HRIS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Employee Profile (HRIS)": {
+      "main": [
+        [
+          {
+            "node": "Welcome Email (Day 1)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Welcome Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Document Forms",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Orientation Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Manager Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Team Introduction Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Welcome Email (Day 1)": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 Days": {
+      "main": [
+        [
+          {
+            "node": "Team Introduction (Day 3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Team Introduction (Day 3)": {
+      "main": [
+        [
+          {
+            "node": "Wait 4 More Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 4 More Days": {
+      "main": [
+        [
+          {
+            "node": "Week 1 Check-in (Day 7)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Orientation Meeting": {
+      "main": [
+        [
+          {
+            "node": "Edit Manager Meeting Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Orientation Data": {
+      "main": [
+        [
+          {
+            "node": "Schedule Orientation Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Manager Meeting Data": {
+      "main": [
+        [
+          {
+            "node": "Schedule Manager Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Manager Meeting": {
+      "main": [
+        [
+          {
+            "node": "Edit Tracker Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Tracker Data": {
+      "main": [
+        [
+          {
+            "node": "Update Onboarding Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Team Introduction Email": {
+      "main": [
+        [
+          {
+            "node": "Edit Tracker Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Onboarding Tracker": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d2ce28ab-c0d2-4ff9-a3f3-c868eff81ff8",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "J6MLyedDZofibLjI",
+  "tags": []
+}

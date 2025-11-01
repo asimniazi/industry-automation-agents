@@ -1,0 +1,824 @@
+{
+  "name": "Automated Nonprofit Donor Management and Campaign System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "40c8d0d2-fbcd-4924-8063-fdd805180ee1",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -176
+      ],
+      "id": "4c3126da-1e74-4eca-b7c3-bb225a491a0c",
+      "name": "Donation Received",
+      "webhookId": "40c8d0d2-fbcd-4924-8063-fdd805180ee1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generic field extraction function\nconst getFieldByKey = (fields, key) => {\n  const field = fields.find(f => f.key === key);\n  return field ? field.value : null;\n};\n\nconst getOptionText = (fields, key, valueId) => {\n  const field = fields.find(f => f.key === key);\n  if (field && field.options && valueId) {\n    const option = field.options.find(opt => opt.id === valueId);\n    return option ? option.text : valueId;\n  }\n  return valueId;\n};\n\n// Extract form data\nconst fields = $input.item.json.body.data.fields;\n\n// Standard output format - works with any form\nreturn {\n  // Donor Information\n  donor_name: getFieldByKey(fields, 'question_Ex46Wo') || 'Anonymous',\n  donor_email: getFieldByKey(fields, 'question_roxYPM') || '',\n  donor_phone: getFieldByKey(fields, 'question_jlOzPR') || '',\n  \n  // Donation Details  \n  amount_dollars: getFieldByKey(fields, 'question_4KgOrb') || 0,\n  donation_frequency: getOptionText(fields, 'question_2KMoPp', \n    getFieldByKey(fields, 'question_2KMoPp')?.[0]) || 'One-time',\n  \n  // Preferences\n  tax_receipt_required: getFieldByKey(fields, 'question_xJezYG')?.includes('6f3b8bfc-c8c3-4f8c-be59-69178e074e03') || false,\n  anonymous_donation: getFieldByKey(fields, 'question_Z2pea0')?.includes('3fe7386c-89a3-4daa-916a-37aecdb50a10') || false,\n  \n  // Payment Info\n  payment_method: getOptionText(fields, 'question_8Z0r25', \n    getFieldByKey(fields, 'question_8Z0r25')?.[0]) || 'Credit Card',\n  \n  // Message\n  optional_message: getFieldByKey(fields, 'question_N7ePoG') || '',\n  \n  // System Fields\n  created_at: new Date().toISOString(),\n  transaction_id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,\n  form_id: $input.item.json.body.data.formId,\n  submission_id: $input.item.json.body.data.submissionId\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -176
+      ],
+      "id": "4f6c1a51-ad60-4cd2-bb3c-d3469c4ef572",
+      "name": "Processing node"
+    },
+    {
+      "parameters": {
+        "resource": "charge",
+        "chargeId": "=ch_3P9KQvLkdIwHu7ix28a3tqPG"
+      },
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -176
+      ],
+      "id": "6464c63c-5c8d-4be5-8268-3565c43d4db4",
+      "name": "Mock Payment Processor",
+      "credentials": {
+        "stripeApi": {
+          "id": "bti89cAnd7PO7pAF",
+          "name": "Stripe account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app3FcWIU0QGfZxOj",
+          "mode": "list",
+          "cachedResultName": "Donors",
+          "cachedResultUrl": "https://airtable.com/app3FcWIU0QGfZxOj"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblpmL7OzCnemNWjQ",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/app3FcWIU0QGfZxOj/tblpmL7OzCnemNWjQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Tax Receipt Required?": true,
+            "Anonymous Donation": false,
+            "Amount": "={{ $json.amount_dollars }}",
+            "Name": "={{ $json.donor_name }}",
+            "Email": "={{ $json.donor_email }}",
+            "Phone": "={{ $json.donor_phone }}",
+            "Donation Frequency": "={{ $json.donation_frequency }}",
+            "Payment Method": "={{ $json.payment_method }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Donation Frequency",
+              "displayName": "Donation Frequency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "One-time donation",
+                  "value": "One-time donation"
+                },
+                {
+                  "name": "Monthly recurring",
+                  "value": "Monthly recurring"
+                },
+                {
+                  "name": "Quarterly recurring",
+                  "value": "Quarterly recurring"
+                },
+                {
+                  "name": "Annual recurring",
+                  "value": "Annual recurring"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tax Receipt Required?",
+              "displayName": "Tax Receipt Required?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Anonymous Donation",
+              "displayName": "Anonymous Donation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Payment Method",
+              "displayName": "Payment Method",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Credit Card",
+                  "value": "Credit Card"
+                },
+                {
+                  "name": "Debit Card",
+                  "value": "Debit Card"
+                },
+                {
+                  "name": "Bank Transfer",
+                  "value": "Bank Transfer"
+                },
+                {
+                  "name": "Pay Pal",
+                  "value": "Pay Pal"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        -176
+      ],
+      "id": "efaf88f7-8f90-4506-9266-c8127b694d22",
+      "name": "Store Donor Record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "jvhIAfhGzqIRTmhz",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.fields.Email }}",
+        "subject": "=Thank you for your donation, {{ $json.fields.Name }}!",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 600px;\n            margin: 0 auto;\n            padding: 20px;\n        }\n        .header {\n            background-color: #2c5aa0;\n            color: white;\n            padding: 20px;\n            text-align: center;\n            border-radius: 8px 8px 0 0;\n        }\n        .content {\n            background-color: #f9f9f9;\n            padding: 30px;\n            border-left: 1px solid #ddd;\n            border-right: 1px solid #ddd;\n        }\n        .donation-details {\n            background-color: white;\n            padding: 20px;\n            border-radius: 5px;\n            margin: 20px 0;\n            border-left: 4px solid #2c5aa0;\n        }\n        .detail-row {\n            display: flex;\n            justify-content: space-between;\n            margin-bottom: 10px;\n            padding-bottom: 10px;\n            border-bottom: 1px solid #eee;\n        }\n        .detail-row:last-child {\n            border-bottom: none;\n        }\n        .amount {\n            font-size: 24px;\n            font-weight: bold;\n            color: #2c5aa0;\n        }\n        .footer {\n            background-color: #333;\n            color: white;\n            padding: 20px;\n            text-align: center;\n            border-radius: 0 0 8px 8px;\n            font-size: 14px;\n        }\n        .tax-receipt-notice {\n            background-color: #e8f4fd;\n            border: 1px solid #b3d9ff;\n            padding: 15px;\n            border-radius: 5px;\n            margin: 20px 0;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h1>Thank You for Your Generous Donation!</h1>\n    </div>\n    \n    <div class=\"content\">\n        <p><strong>Dear {{ $('Processing node').item.json.donor_name }},</strong></p>\n        \n        <p>We are deeply grateful for your generous donation of <span class=\"amount\">${{ $('Processing node').item.json.amount_dollars }}</span> to our organization. Your support makes a real difference in our mission.</p>\n        \n        <div class=\"donation-details\">\n            <h3>Donation Details</h3>\n            <div class=\"detail-row\">\n                <span><strong>Amount:</strong></span>\n                <span>${{ $('Processing node').item.json.amount_dollars }}</span>\n            </div>\n            <div class=\"detail-row\">\n                <span><strong>Frequency:</strong></span>\n                <span>{{ $('Processing node').item.json.donation_frequency }}</span>\n            </div>\n            <div class=\"detail-row\">\n                <span><strong>Transaction ID:</strong></span>\n                <span>{{ $('Processing node').item.json.transaction_id }}</span>\n            </div>\n            <div class=\"detail-row\">\n                <span><strong>Date:</strong></span>\n                <span>{{ $('Processing node').item.json.created_at }}</span>\n            </div>\n            <div class=\"detail-row\">\n                <span><strong>Payment Method:</strong></span>\n                <span>{{ $json.fields['Payment Method'] }}</span>\n            </div>\n        </div>\n        \n        {{ $json.tax_receipt_required ? '<div class=\"tax-receipt-notice\"><strong>Tax Receipt:</strong> Your official tax receipt will be generated and sent to you separately within 2-3 business days.</div>' : '' }}\n        \n        {{ $json.optional_message && $json.optional_message !== 'None.' ? '<p><strong>Your Message:</strong> \"' + $json.optional_message + '\"</p>' : '' }}\n        \n        <p>Your contribution helps us continue our important work and reach more people in need. We couldn't do this without supporters like you.</p>\n        \n        <p>If you have any questions about your donation or would like to learn more about our programs, please don't hesitate to contact us.</p>\n        \n        <p>With heartfelt gratitude,</p>\n        <p><strong>The Donation Team</strong><br>\n        Your Organization Name</p>\n    </div>\n    \n    <div class=\"footer\">\n        <p>This email confirms your donation. Please keep this for your records.</p>\n        <p>Contact us: donations@yourorganization.org | (555) 123-4567</p>\n        <p>&copy; 2025 Your Organization Name. All rights reserved.</p>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        -176
+      ],
+      "id": "675ea108-811b-4f1f-87d9-e18af8e7a2c5",
+      "name": "Send Thank You Email",
+      "webhookId": "78535710-0b59-410e-ab1b-70f9346dac22",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "sk_bc59d153d01e23ffeac120a22e46586f6aaa05ff"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "=<html><head><style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.header{text-align:center;border-bottom:3px solid #2c5aa0;padding-bottom:20px;margin-bottom:30px}.org-name{color:#2c5aa0;font-size:18px;margin:10px 0}.receipt-title{color:#333;margin:0}.receipt-details{background:#f9f9f9;padding:25px;border-radius:8px;margin:20px 0}.detail-row{display:flex;justify-content:space-between;margin:15px 0;padding:10px 0;border-bottom:1px solid #ddd}.detail-row:last-child{border-bottom:none}.amount{font-size:28px;font-weight:bold;color:#2c5aa0}.footer{margin-top:40px;padding-top:20px;border-top:1px solid #ccc;font-size:14px;color:#666;line-height:1.6}</style></head><body><div class='header'><h1 class='receipt-title'>OFFICIAL TAX RECEIPT</h1><p class='org-name'>{{ $json.org_name || 'Your Organization Name' }}</p><p>Tax ID: {{ $json.tax_id || '12-3456789' }}</p></div><div class='receipt-details'><div class='detail-row'><span><strong>Receipt Number:</strong></span><span>{{ $('Processing node').item.json.transaction_id }}</span></div><div class='detail-row'><span><strong>Date:</strong></span><span>{{ new Date($json.created_at).toLocaleDateString() }}</span></div><div class='detail-row'><span><strong>Donor Name:</strong></span><span>{{ $('Processing node').item.json.donor_name }}</span></div><div class='detail-row'><span><strong>Donor Email:</strong></span><span>{{ $('Processing node').item.json.donor_email }}</span></div><div class='detail-row'><span><strong>Donation Amount:</strong></span><span class='amount'>${{ $('Processing node').item.json.amount_dollars }}</span></div><div class='detail-row'><span><strong>Payment Method:</strong></span><span>{{ $('Processing node').item.json.payment_method }}</span></div><div class='detail-row'><span><strong>Frequency:</strong></span><span>{{ $('Processing node').item.json.donation_frequency }}</span></div></div><div class='footer'><p><strong>Important Tax Information:</strong></p><ul><li>This receipt serves as proof of your charitable donation for tax purposes.</li><li>No goods or services were provided in exchange for this contribution.</li><li>Please consult your tax advisor for deductibility details.</li><li>Keep this receipt for your tax records.</li></ul><p style='margin-top:20px;text-align:center;font-size:12px'>Generated on {{ $('Processing node').item.json.created_at }}</p></div></body></html>"
+            },
+            {
+              "name": "filename",
+              "value": "=tax_receipt_{{ $('Processing node').item.json.transaction_id }}.pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -176
+      ],
+      "id": "d3985394-ae4a-4c49-856b-5101ac363215",
+      "name": "Generate Tax Receipt PDF"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Processing node').item.json.donor_email }}",
+        "subject": "=Official Tax Receipt - {{ $('Processing node').item.json.donor_name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <style>\n        body {\n            font-family: 'Segoe UI', Arial, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 600px;\n            margin: 0 auto;\n            padding: 0;\n            background-color: #f5f5f5;\n        }\n        .email-container {\n            background-color: #ffffff;\n            border-radius: 8px;\n            overflow: hidden;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n        }\n        .header {\n            background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);\n            color: white;\n            padding: 30px 20px;\n            text-align: center;\n        }\n        .header h1 {\n            margin: 0;\n            font-size: 24px;\n            font-weight: normal;\n        }\n        .header .subtitle {\n            margin: 8px 0 0 0;\n            font-size: 14px;\n            opacity: 0.9;\n        }\n        .content {\n            padding: 30px 25px;\n        }\n        .greeting {\n            font-size: 18px;\n            margin-bottom: 20px;\n            color: #2c5aa0;\n            font-weight: 600;\n        }\n        .main-text {\n            margin-bottom: 25px;\n            font-size: 16px;\n            line-height: 1.5;\n        }\n        .receipt-section {\n            background-color: #f8f9fa;\n            border-left: 4px solid #2c5aa0;\n            padding: 20px;\n            margin: 25px 0;\n            border-radius: 0 5px 5px 0;\n        }\n        .receipt-title {\n            color: #2c5aa0;\n            font-size: 18px;\n            font-weight: bold;\n            margin-bottom: 15px;\n            border-bottom: 2px solid #e9ecef;\n            padding-bottom: 8px;\n        }\n        .receipt-item {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            padding: 8px 0;\n            border-bottom: 1px solid #e9ecef;\n        }\n        .receipt-item:last-child {\n            border-bottom: none;\n        }\n        .receipt-label {\n            font-weight: 600;\n            color: #495057;\n        }\n        .receipt-value {\n            color: #2c5aa0;\n            font-weight: 500;\n        }\n        .amount-highlight {\n            font-size: 20px;\n            font-weight: bold;\n            color: #28a745;\n        }\n        .important-notice {\n            background-color: #e8f4fd;\n            border: 1px solid #b3d9ff;\n            padding: 15px;\n            border-radius: 5px;\n            margin: 20px 0;\n            font-size: 14px;\n        }\n        .closing {\n            margin-top: 30px;\n            padding-top: 20px;\n            border-top: 2px solid #e9ecef;\n        }\n        .signature {\n            margin-top: 20px;\n            font-weight: 600;\n            color: #2c5aa0;\n        }\n        .footer {\n            background-color: #f8f9fa;\n            padding: 20px;\n            text-align: center;\n            font-size: 12px;\n            color: #6c757d;\n            border-top: 1px solid #e9ecef;\n        }\n        .footer a {\n            color: #2c5aa0;\n            text-decoration: none;\n        }\n        @media (max-width: 480px) {\n            .content {\n                padding: 20px 15px;\n            }\n            .receipt-item {\n                flex-direction: column;\n                align-items: flex-start;\n            }\n            .receipt-value {\n                margin-top: 5px;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"email-container\">\n        <div class=\"header\">\n            <h1>Official Tax Receipt</h1>\n            <p class=\"subtitle\">Thank you for your generous donation</p>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"greeting\">\n                Dear {{ $('Processing node').item.json.donor_name }},\n            </div>\n            \n            <div class=\"main-text\">\n                Please find your official tax receipt attached for your donation of <strong>${{ $('Processing node').item.json.amount_dollars }}</strong>. We are deeply grateful for your generous support.\n            </div>\n            \n            <div class=\"receipt-section\">\n                <div class=\"receipt-title\">Receipt Details</div>\n                \n                <div class=\"receipt-item\">\n                    <span class=\"receipt-label\">Receipt Number:</span>\n                    <span class=\"receipt-value\">{{ $('Processing node').item.json.transaction_id }}</span>\n                </div>\n                \n                <div class=\"receipt-item\">\n                    <span class=\"receipt-label\">Donation Amount:</span>\n                    <span class=\"receipt-value amount-highlight\">${{ $('Processing node').item.json.amount_dollars }}</span>\n                </div>\n                \n                <div class=\"receipt-item\">\n                    <span class=\"receipt-label\">Date:</span>\n                    <span class=\"receipt-value\">{{ new Date($json.created_at).toLocaleDateString() }}</span>\n                </div>\n                \n                <div class=\"receipt-item\">\n                    <span class=\"receipt-label\">Payment Method:</span>\n                    <span class=\"receipt-value\">{{ $('Processing node').item.json.payment_method }}</span>\n                </div>\n                \n                <div class=\"receipt-item\">\n                    <span class=\"receipt-label\">Frequency:</span>\n                    <span class=\"receipt-value\">{{ $('Processing node').item.json.donation_frequency }}</span>\n                </div>\n            </div>\n            \n            <div class=\"important-notice\">\n                <strong>Important:</strong> Please keep this receipt for your tax records. This receipt serves as proof of your charitable donation for tax purposes.\n            </div>\n            \n            <div class=\"main-text\">\n                Thank you again for your generous support! Your contribution makes a real difference in our mission and helps us continue our important work.\n            </div>\n            \n            <div class=\"closing\">\n                <div class=\"signature\">\n                    Best regards,<br>\n                    <strong>The Donation Team</strong><br>\n                    Your Organization Name\n                </div>\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <p>This email was sent regarding your donation. If you have any questions, please contact us.</p>\n            <p>\n                <a href=\"mailto:donations@yourorganization.org\">donations@yourorganization.org</a> | \n                <a href=\"tel:+15551234567\">(555) 123-4567</a>\n            </p>\n            <p>&copy; 2025 Your Organization Name. All rights reserved.</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        752,
+        -176
+      ],
+      "id": "cca91c51-788d-4d00-a1c1-dce491508643",
+      "name": "Send Tax Receipt Email",
+      "webhookId": "9605c7ad-2d90-4e78-8db9-ee6c7b15692f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        -176
+      ],
+      "id": "f48a20f2-a8b8-49ba-9ba9-7b38ec80f9fa",
+      "name": "Download PDF File"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 365,
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        208
+      ],
+      "id": "c109b652-220e-4d37-baf4-34a288d70df9",
+      "name": "Annual Campaign Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "app3FcWIU0QGfZxOj",
+          "mode": "list",
+          "cachedResultName": "Donors",
+          "cachedResultUrl": "https://airtable.com/app3FcWIU0QGfZxOj"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblpmL7OzCnemNWjQ",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/app3FcWIU0QGfZxOj/tblpmL7OzCnemNWjQ"
+        },
+        "filterByFormula": "NOT({Email} = \"\")",
+        "options": {},
+        "sort": {
+          "property": [
+            {
+              "field": "Amount",
+              "direction": "desc"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        208
+      ],
+      "id": "a9f86bbd-040e-47a5-ac0c-2aa11dbacc54",
+      "name": "Get All Donors",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "jvhIAfhGzqIRTmhz",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process donor list for personalized campaigns\nconst donors = $input.all();\nconst campaignData = [];\n\ndonors.forEach((item, index) => {\n  // Access the fields directly from the item.json structure\n  const donor = item.json;\n  \n  // Extract donor information with correct field names\n  const donorName = donor.Name || 'Valued Supporter';\n  const donorEmail = donor.Email;\n  const lastAmount = donor.Amount || 0;\n  const frequency = donor['Donation Frequency'] || 'One-time';\n  \n  // Segment donors for personalized messaging\n  const donorSegment = lastAmount >= 1000 ? 'major' : 'standard';\n  \n  campaignData.push({\n    donor_name: donorName,\n    donor_email: donorEmail,\n    last_donation_amount: lastAmount,\n    donation_frequency: frequency,\n    donor_segment: donorSegment,\n    personalized_greeting: `Dear ${donorName}`,\n    impact_message: lastAmount >= 1000 ? \n      'Your major gift has transformed lives in our community.' : \n      'Your generous support makes a real difference.'\n  });\n});\n\nreturn campaignData.map(donor => ({ json: donor }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        208
+      ],
+      "id": "1fda535d-5215-4254-b70c-e535be8db2df",
+      "name": "Prepare Campaign Data"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.donor_email }}",
+        "subject": "=Your Impact This Year - {{ $json.donor_name }}",
+        "message": "=<!DOCTYPE html> <html> <head>     <meta charset=\"UTF-8\">     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">     <style>         body {             font-family: 'Segoe UI', Arial, sans-serif;             line-height: 1.6;             color: #333;             max-width: 600px;             margin: 0 auto;             padding: 0;             background-color: #f5f5f5;         }         .email-container {             background-color: #ffffff;             border-radius: 8px;             overflow: hidden;             box-shadow: 0 2px 10px rgba(0,0,0,0.1);         }         .header {             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);             color: white;             padding: 30px 20px;             text-align: center;         }         .header h1 {             margin: 0;             font-size: 26px;             font-weight: normal;         }         .header .subtitle {             margin: 10px 0 0 0;             font-size: 16px;             opacity: 0.9;         }         .content {             padding: 30px 25px;         }         .greeting {             font-size: 18px;             margin-bottom: 20px;             color: #2c5aa0;             font-weight: 600;         }         .main-text {             margin-bottom: 25px;             font-size: 16px;             line-height: 1.6;         }         .impact-section {             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);             border-left: 4px solid #2c5aa0;             padding: 25px;             margin: 25px 0;             border-radius: 0 8px 8px 0;         }         .impact-title {             color: #2c5aa0;             font-size: 20px;             font-weight: bold;             margin-bottom: 15px;             text-align: center;         }         .personal-impact {             background: white;             padding: 15px;             border-radius: 5px;             margin: 15px 0;             text-align: center;             font-style: italic;             color: #495057;             border: 1px solid #dee2e6;         }         .achievements {             background-color: #ffffff;             padding: 20px;             margin: 20px 0;             border-radius: 8px;             border: 1px solid #e9ecef;         }         .achievements h3 {             color: #2c5aa0;             margin-top: 0;             text-align: center;         }         .achievements ul {             list-style: none;             padding: 0;         }         .achievements li {             padding: 8px 0;             border-bottom: 1px solid #f1f3f4;             position: relative;             padding-left: 25px;         }         .achievements li:before {             content: \"✓\";             color: #28a745;             font-weight: bold;             position: absolute;             left: 0;         }         .achievements li:last-child {             border-bottom: none;         }         .cta-section {             text-align: center;             margin: 30px 0;             padding: 25px;             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);             border-radius: 8px;         }         .cta-button {             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);             color: white;             padding: 15px 30px;             text-decoration: none;             border-radius: 25px;             display: inline-block;             margin: 15px 0;             font-weight: 600;             font-size: 16px;             transition: transform 0.2s;         }         .cta-button:hover {             transform: translateY(-2px);             box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);         }         .stats-row {             display: flex;             justify-content: space-around;             margin: 20px 0;             text-align: center;         }         .stat-item {             flex: 1;             padding: 15px;         }         .stat-number {             font-size: 24px;             font-weight: bold;             color: #2c5aa0;             display: block;         }         .stat-label {             font-size: 12px;             color: #6c757d;             text-transform: uppercase;             letter-spacing: 1px;         }         .footer {             background-color: #343a40;             color: white;             padding: 25px 20px;             text-align: center;             font-size: 14px;         }         .footer a {             color: #adb5bd;             text-decoration: none;         }         .signature {             margin-top: 25px;             padding-top: 20px;             border-top: 2px solid #e9ecef;             font-weight: 600;             color: #2c5aa0;         }         @media (max-width: 480px) {             .content {                 padding: 20px 15px;             }             .stats-row {                 flex-direction: column;             }             .stat-item {                 margin-bottom: 15px;             }         }     </style> </head> <body>     <div class=\"email-container\">         <div class=\"header\">             <h1>Your Impact This Year</h1>             <p class=\"subtitle\">A heartfelt thank you from our community</p>         </div>                  <div class=\"content\">             <div class=\"greeting\">                 {{ $json.personalized_greeting }},             </div>                          <div class=\"main-text\">                 As we reflect on this transformative year, we want you to know that your generosity has created ripples of positive change throughout our community. Thanks to supporters like you, we've been able to reach more people, expand our programs, and make a lasting difference in countless lives.             </div>                          <div class=\"impact-section\">                 <div class=\"impact-title\">Your Personal Impact</div>                                  <div class=\"stats-row\">                     <div class=\"stat-item\">                         <span class=\"stat-number\">${{ $json.last_donation_amount }}</span>                         <span class=\"stat-label\">Last Gift</span>                     </div>                     <div class=\"stat-item\">                         <span class=\"stat-number\">{{ $json.donation_frequency }}</span>                         <span class=\"stat-label\">Support Type</span>                     </div>                     <div class=\"stat-item\">                         <span class=\"stat-number\">{{ $json.donor_segment === 'major' ? 'Major' : 'Valued' }}</span>                         <span class=\"stat-label\">Donor Status</span>                     </div>                 </div>                                  <div class=\"personal-impact\">                     {{ $json.impact_message }}                 </div>             </div>                          <div class=\"achievements\">                 <h3>Together, We Achieved Amazing Things</h3>                 <ul>                     <li>Supported 500+ families with essential resources and services</li>                     <li>Provided 10,000+ nutritious meals to community members in need</li>                     <li>Expanded our educational programs to reach 200+ children</li>                     <li>Launched new mental health support services for 150+ individuals</li>                     <li>Created job training opportunities for 75+ community members</li>                     <li>Distributed emergency assistance to 300+ households during crises</li>                 </ul>             </div>                          <div class=\"main-text\">                 As we look toward the future, we're filled with hope and excitement about what we can accomplish together. Your continued partnership allows us to dream bigger, reach further, and create even more meaningful change in our community.             </div>                          <div class=\"cta-section\">                 <div class=\"main-text\">                     <strong>Will you help us continue this vital work?</strong><br>                     Your year-end gift will help us start the new year strong and ready to serve even more people who need our support.                 </div>                                  <a href=\"https://your-donation-form.com\" class=\"cta-button\">Make a Year-End Gift</a>                                  <div style=\"margin-top: 15px; font-size: 14px; color: #6c757d;\">                     Every gift, no matter the size, makes a difference                 </div>             </div>                          <div class=\"main-text\">                 Thank you for believing in our mission and for being such an important part of our community. We are honored to have your support and look forward to creating even more positive change together in the year ahead.             </div>                          <div class=\"signature\">                 With heartfelt gratitude,<br>                 <strong>The Team at Your Organization</strong><br>                 <em>Making a difference, one life at a time</em>             </div>         </div>                  <div class=\"footer\">             <p>This email was sent to supporters who have made a difference in our community.</p>             <p>                 <a href=\"mailto:info@yourorganization.org\">info@yourorganization.org</a> |                  <a href=\"tel:+15551234567\">(555) 123-4567</a> |                  <a href=\"https://yourorganization.org\">yourorganization.org</a>             </p>             <p>&copy; 2025 Your Organization Name. All rights reserved.</p>         </div>     </div> </body> </html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        352,
+        208
+      ],
+      "id": "a7467fe1-246c-4539-bf27-d19863130506",
+      "name": "Send Annual Campaign Email",
+      "webhookId": "976283d4-3f9d-4d46-9109-e369fe183ec6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Donation Received": [
+      {
+        "json": {
+          "headers": {
+            "host": "asimkhanniazi.app.n8n.cloud",
+            "user-agent": "Tally Webhooks",
+            "content-length": "3009",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "baggage": "sentry-environment=production,sentry-release=ce64086e4ad502044d931cc66ed2a017514a2ec4,sentry-public_key=6af4b6673f1648edaa8fef3f2ca43405,sentry-trace_id=b15af7127ae62690223f27d36a203665,sentry-org_id=407628,sentry-sampled=false,sentry-sample_rand=0.9170963330432675,sentry-sample_rate=0.001",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.96.62.173",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "BE",
+            "cf-ray": "98957b7f855fef01-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sentry-trace": "b15af7127ae62690223f27d36a203665-2c70e9884206c3d1-0",
+            "x-forwarded-for": "34.96.62.173, 141.101.98.209",
+            "x-forwarded-host": "asimkhanniazi.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-46-d85945c6c-grhkb",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.96.62.173"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "eventId": "61be349b-9737-40d9-9125-4de866addc7a",
+            "eventType": "FORM_RESPONSE",
+            "createdAt": "2025-10-04T14:48:49.767Z",
+            "data": {
+              "responseId": "44zZpqr",
+              "submissionId": "44zZpqr",
+              "respondentId": "eqq9bvl",
+              "formId": "w4e2Qb",
+              "formName": "Annual Donation Form - Help Us Make a Difference\n",
+              "createdAt": "2025-10-04T14:48:49.000Z",
+              "fields": [
+                {
+                  "key": "question_Ex46Wo",
+                  "label": "Full Name",
+                  "type": "INPUT_TEXT",
+                  "value": "Asim Niazi"
+                },
+                {
+                  "key": "question_roxYPM",
+                  "label": "Email Address",
+                  "type": "INPUT_EMAIL",
+                  "value": "asimniazi100@gmail.com"
+                },
+                {
+                  "key": "question_4KgOrb",
+                  "label": "Donation Amount",
+                  "type": "INPUT_NUMBER",
+                  "value": 1500
+                },
+                {
+                  "key": "question_jlOzPR",
+                  "label": "Phone Number",
+                  "type": "INPUT_PHONE_NUMBER",
+                  "value": "+923000281455"
+                },
+                {
+                  "key": "question_2KMoPp",
+                  "label": "Donation Frequency",
+                  "type": "DROPDOWN",
+                  "value": [
+                    "ff0031a5-dc58-47a6-8b1c-68029130a947"
+                  ],
+                  "options": [
+                    {
+                      "id": "ba7f7563-c171-45e9-9e06-f6803f10d5c4",
+                      "text": "One-time donation"
+                    },
+                    {
+                      "id": "ff0031a5-dc58-47a6-8b1c-68029130a947",
+                      "text": "Monthly recurring"
+                    },
+                    {
+                      "id": "ed6aa2c1-9d42-42fb-af5d-314795723130",
+                      "text": "Quarterly recurring"
+                    },
+                    {
+                      "id": "5a7f357c-f833-4f5a-b70a-af5c9ad4c808",
+                      "text": "Annual recurring"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_xJezYG",
+                  "label": "Tax Receipt Required?",
+                  "type": "CHECKBOXES",
+                  "value": [
+                    "6f3b8bfc-c8c3-4f8c-be59-69178e074e03"
+                  ],
+                  "options": [
+                    {
+                      "id": "6f3b8bfc-c8c3-4f8c-be59-69178e074e03",
+                      "text": "Yes"
+                    },
+                    {
+                      "id": "c308f2a0-674b-4379-87a6-ab4eed98d810",
+                      "text": "No"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_xJezYG_6f3b8bfc-c8c3-4f8c-be59-69178e074e03",
+                  "label": "Tax Receipt Required? (Yes)",
+                  "type": "CHECKBOXES",
+                  "value": true
+                },
+                {
+                  "key": "question_xJezYG_c308f2a0-674b-4379-87a6-ab4eed98d810",
+                  "label": "Tax Receipt Required? (No)",
+                  "type": "CHECKBOXES",
+                  "value": false
+                },
+                {
+                  "key": "question_Z2pea0",
+                  "label": "Anonymous Donation?",
+                  "type": "CHECKBOXES",
+                  "value": [
+                    "85794a49-e43f-4dff-ab42-1fc423dbe3eb"
+                  ],
+                  "options": [
+                    {
+                      "id": "3fe7386c-89a3-4daa-916a-37aecdb50a10",
+                      "text": "Yes"
+                    },
+                    {
+                      "id": "85794a49-e43f-4dff-ab42-1fc423dbe3eb",
+                      "text": "No"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_Z2pea0_3fe7386c-89a3-4daa-916a-37aecdb50a10",
+                  "label": "Anonymous Donation? (Yes)",
+                  "type": "CHECKBOXES",
+                  "value": false
+                },
+                {
+                  "key": "question_Z2pea0_85794a49-e43f-4dff-ab42-1fc423dbe3eb",
+                  "label": "Anonymous Donation? (No)",
+                  "type": "CHECKBOXES",
+                  "value": true
+                },
+                {
+                  "key": "question_N7ePoG",
+                  "label": "Optional Message",
+                  "type": "TEXTAREA",
+                  "value": "None."
+                },
+                {
+                  "key": "question_8Z0r25",
+                  "label": "Payment Method",
+                  "type": "DROPDOWN",
+                  "value": [
+                    "f9e8a463-ed7e-4f24-b584-5b1a31b8f5d6"
+                  ],
+                  "options": [
+                    {
+                      "id": "f9e8a463-ed7e-4f24-b584-5b1a31b8f5d6",
+                      "text": "Credit Card"
+                    },
+                    {
+                      "id": "197f373b-5e5f-466f-9d25-fa0726735de4",
+                      "text": "Debit Card"
+                    },
+                    {
+                      "id": "8f39907d-4acf-4921-8ad0-310731d5b01d",
+                      "text": "Bank Transfer"
+                    },
+                    {
+                      "id": "93c37506-87a0-4d79-8410-83a2e213dd53",
+                      "text": "PayPal"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_0epkGy",
+                  "label": "Card Number",
+                  "type": "INPUT_TEXT",
+                  "value": "1234 4567 7890 9876"
+                },
+                {
+                  "key": "question_z7adgR",
+                  "label": "Expiry Date",
+                  "type": "INPUT_TEXT",
+                  "value": "03|25"
+                },
+                {
+                  "key": "question_5ZyVro",
+                  "label": "CVV",
+                  "type": "INPUT_NUMBER",
+                  "value": 123
+                },
+                {
+                  "key": "question_d95zgo",
+                  "label": "Cardholder Name",
+                  "type": "INPUT_TEXT",
+                  "value": "Asim Niazi"
+                }
+              ]
+            }
+          },
+          "webhookUrl": "https://asimkhanniazi.app.n8n.cloud/webhook-test/40c8d0d2-fbcd-4924-8063-fdd805180ee1",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Send Annual Campaign Email": [
+      {
+        "json": {
+          "id": "199b03fb9cb9d144",
+          "threadId": "199b03fb9cb9d144",
+          "labelIds": [
+            "UNREAD",
+            "SENT",
+            "INBOX"
+          ]
+        }
+      },
+      {
+        "json": {
+          "id": "199b03fbcd2cddac",
+          "threadId": "199b03fbcd2cddac",
+          "labelIds": [
+            "UNREAD",
+            "SENT",
+            "INBOX"
+          ]
+        }
+      }
+    ],
+    "Send Tax Receipt Email": [
+      {
+        "json": {
+          "id": "199b0405f2460261",
+          "threadId": "199b0405f2460261",
+          "labelIds": [
+            "UNREAD",
+            "SENT",
+            "INBOX"
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Donation Received": {
+      "main": [
+        [
+          {
+            "node": "Processing node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing node": {
+      "main": [
+        [
+          {
+            "node": "Mock Payment Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Payment Processor": {
+      "main": [
+        [
+          {
+            "node": "Store Donor Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Donor Record": {
+      "main": [
+        [
+          {
+            "node": "Send Thank You Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Thank You Email": {
+      "main": [
+        [
+          {
+            "node": "Generate Tax Receipt PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Tax Receipt PDF": {
+      "main": [
+        [
+          {
+            "node": "Download PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF File": {
+      "main": [
+        [
+          {
+            "node": "Send Tax Receipt Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Annual Campaign Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Donors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Donors": {
+      "main": [
+        [
+          {
+            "node": "Prepare Campaign Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Campaign Data": {
+      "main": [
+        [
+          {
+            "node": "Send Annual Campaign Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a3976125-3152-4a2e-84b9-34b229cc5305",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "LtJ03ZQLao1Tn6mP",
+  "tags": []
+}

@@ -1,0 +1,830 @@
+{
+  "name": "Real Estate Lead Management Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6b690635-4ef7-4636-864d-71aee7220842",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        -96
+      ],
+      "id": "bda15d14-bfe3-4156-9bb0-6b83cdd0b396",
+      "name": "Tally Webhook",
+      "webhookId": "6b690635-4ef7-4636-864d-71aee7220842"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9b303a77-6f26-4ce8-be98-f052ddf777e6",
+              "name": "full_name",
+              "value": "={{ $json.body.data.fields[0].value }}",
+              "type": "string"
+            },
+            {
+              "id": "e6d43b4b-3fbf-472d-8b41-e2c6a229c8b9",
+              "name": "email",
+              "value": "={{ $json.body.data.fields[1].value }}",
+              "type": "string"
+            },
+            {
+              "id": "00ecd4af-ced2-4b90-80d4-72d686ec4853",
+              "name": "phone",
+              "value": "={{ $json.body.data.fields[2].value }}",
+              "type": "string"
+            },
+            {
+              "id": "ef6e2daf-de6f-46a5-bf00-4a6db3e96aa2",
+              "name": "property_type",
+              "value": "={{ $json.body.data.fields[3].options.find(opt => opt.id === $json.body.data.fields[3].value[0]).text }}",
+              "type": "string"
+            },
+            {
+              "id": "996b554b-db23-4ffa-ad69-8932dd9ed629",
+              "name": "budget_range",
+              "value": "={{ $json.body.data.fields[4].options.find(opt => opt.id === $json.body.data.fields[4].value[0]).text }}",
+              "type": "string"
+            },
+            {
+              "id": "4e430212-5a46-41f8-99a5-37844163f656",
+              "name": "timeline",
+              "value": "={{ $json.body.data.fields[5].options.find(opt => opt.id === $json.body.data.fields[5].value[0]).text }}",
+              "type": "string"
+            },
+            {
+              "id": "eb8fe9d3-60fc-4b61-8c2d-8ac59d079387",
+              "name": "preferred_location",
+              "value": "={{ $json.body.data.fields[6].value }}",
+              "type": "string"
+            },
+            {
+              "id": "36a4c0e1-683e-449e-b164-6502de49f446",
+              "name": "current_situation",
+              "value": "={{ $json.body.data.fields[7].options.find(opt => opt.id === $json.body.data.fields[7].value[0]).text }}",
+              "type": "string"
+            },
+            {
+              "id": "085f25a5-7531-400d-bec0-12fa35635b6a",
+              "name": "how_did_you_hear",
+              "value": "={{ $json.body.data.fields[8].options.find(opt => opt.id === $json.body.data.fields[8].value[0]).text }}",
+              "type": "string"
+            },
+            {
+              "id": "58a296b5-b5f7-4987-95a9-0ee89e275dd6",
+              "name": "additional_notes",
+              "value": "={{ $json.body.data.fields[9].value }}",
+              "type": "string"
+            },
+            {
+              "id": "76a353cc-2202-4ec7-8f5e-83847ef9bf8e",
+              "name": "=lead_score",
+              "value": "==\"{{   (() => {    const budgetField = $json.body.data.fields[4];    const budgetOption = budgetField.options.find(opt => opt.id === budgetField.value[0]);    const budgetText = budgetOption ? budgetOption.text : '';        let budgetScore = 10;    if (budgetText.includes('Over $1,000,000')) budgetScore = 40;    else if (budgetText.includes('$500,000 - $1,000,000')) budgetScore = 30;    else if (budgetText.includes('$200,000 - $500,000')) budgetScore = 20;        const timelineField = $json.body.data.fields[5];    const timelineOption = timelineField.options.find(opt => opt.id === timelineField.value[0]);    const timelineText = timelineOption ? timelineOption.text : '';        let timelineScore = 5;    if (timelineText.includes('Immediate')) timelineScore = 30;    else if (timelineText.includes('1-3 months')) timelineScore = 20;    else if (timelineText.includes('3-6 months')) timelineScore = 10;        const propertyField = $json.body.data.fields[3];    const propertyOption = propertyField.options.find(opt => opt.id === propertyField.value[0]);    const propertyText = propertyOption ? propertyOption.text : '';        let propertyScore = 15;    if (propertyText.includes('Sell')) propertyScore = 25;    else if (propertyText.includes('Buy')) propertyScore = 20;        return budgetScore + timelineScore + propertyScore;  })()}}\"",
+              "type": "string"
+            },
+            {
+              "id": "4ddf4e21-ecd7-49d8-abbf-4ad1f883a264",
+              "name": "=lead_category",
+              "value": "==\"{{ $json.lead_score >= 70 ? 'Hot' : $json.lead_score >= 40 ? 'Warm' : 'Cold' }}\"",
+              "type": "string"
+            },
+            {
+              "id": "88e89d56-c1ca-4a7d-9b8c-90645755f625",
+              "name": "=priority_level",
+              "value": "==\"{{ $json.lead_category === 'Hot' ? 'High' : $json.lead_category === 'Warm' ? 'Medium' : 'Low' }}\"",
+              "type": "string"
+            },
+            {
+              "id": "e388cae3-838e-4ea6-b5a9-520eaed68dee",
+              "name": "created_date",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "25735fcb-70d7-4d6a-9595-cd6f0adc8fe4",
+              "name": "form_id",
+              "value": "={{ $json.body.data.formId }}",
+              "type": "string"
+            },
+            {
+              "id": "fbd879aa-b45b-4fe4-9ea8-678309119721",
+              "name": "response_id",
+              "value": "={{ $json.body.data.responseId }}",
+              "type": "string"
+            },
+            {
+              "id": "6cd0101d-0711-4779-931a-f8cee56ca2a4",
+              "name": "status",
+              "value": "New",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -96
+      ],
+      "id": "85d7ab74-0b28-4ee5-af0a-e85935055f59",
+      "name": "Lead Scoring & Data Extraction"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17tOEUsweMBlcYHGuiYYp1-m-a9yIp_3CVRHx75mIn1k",
+          "mode": "list",
+          "cachedResultName": "Property Inquiry Form - UrbanEdge Real Estate",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17tOEUsweMBlcYHGuiYYp1-m-a9yIp_3CVRHx75mIn1k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17tOEUsweMBlcYHGuiYYp1-m-a9yIp_3CVRHx75mIn1k/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{ $json.full_name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "Property Type": "={{ $json.property_type }}",
+            "Budget Range": "={{ $json.budget_range }}",
+            "Timeline": "={{ $json.timeline }}",
+            "Preferred Location": "={{ $json.preferred_location }}",
+            "Current Situation": "={{ $json.current_situation }}",
+            "Lead Source": "={{ $json.how_did_you_hear }}",
+            "Lead Score": "={{ $json.lead_score }}",
+            "Lead Category": "={{ $json.lead_category }}",
+            "Priority Level": "={{ $json.priority_level }}",
+            "Created Date": "={{ $json.created_date }}",
+            "Form ID": "={{ $json.form_id }}",
+            "Response ID": "={{ $json.response_id }}",
+            "Additional Notes": "={{ $json.additional_notes }}",
+            "Status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Property Type",
+              "displayName": "Property Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget Range",
+              "displayName": "Budget Range",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Location",
+              "displayName": "Preferred Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Current Situation",
+              "displayName": "Current Situation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Source",
+              "displayName": "Lead Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Category",
+              "displayName": "Lead Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority Level",
+              "displayName": "Priority Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created Date",
+              "displayName": "Created Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Additional Notes",
+              "displayName": "Additional Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Form ID",
+              "displayName": "Form ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Response ID",
+              "displayName": "Response ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        272,
+        -96
+      ],
+      "id": "2a60df7e-1f45-4ed6-a93d-c513a5c76d00",
+      "name": "CRM Storage",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6265a8be-2283-4ae9-b661-170cb4b82fa8",
+              "leftValue": "={{ $node['Lead Scoring & Data Extraction'].json.lead_category }}",
+              "rightValue": "Hot",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "7de0030e-8f2f-4f54-8f9f-85423aa8fe02",
+              "leftValue": "={{ $node['Lead Scoring & Data Extraction'].json.lead_category }}",
+              "rightValue": "Warm",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        -96
+      ],
+      "id": "ae854db8-a964-41bc-9d4f-362ef15afb9d",
+      "name": "Lead Qualification Router"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "={{ $node['Lead Scoring & Data Extraction'].json.full_name }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #2c5aa0;\">Hello {{ $node['Lead Scoring & Data Extraction'].json.full_name }}!</h2>\n  \n  <p>Thank you for your interest in {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} a property! Based on your preferences, I can see you're looking for something special.</p>\n  \n  <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n    <h3 style=\"color: #2c5aa0; margin-top: 0;\">Your Preferences:</h3>\n    <ul>\n      <li><strong>Property Type:</strong> {{ $node['Lead Scoring & Data Extraction'].json.property_type }}</li>\n      <li><strong>Budget Range:</strong> {{ $node['Lead Scoring & Data Extraction'].json.budget_range }}</li>\n      <li><strong>Timeline:</strong> {{ $node['Lead Scoring & Data Extraction'].json.timeline }}</li>\n      <li><strong>Preferred Location:</strong> {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }}</li>\n    </ul>\n  </div>\n  \n  <p><strong>I'll be reaching out personally within 24 hours</strong> to discuss your needs and share some exclusive properties that match your criteria.</p>\n  \n  <p>In the meantime, feel free to call me directly at <strong>(555) 123-4567</strong> - I'm here to help!</p>\n  \n  <p>Best regards,<br>\n  <strong>Your Name</strong><br>\n  Licensed Real Estate Professional<br>\n  📧 f228773@cfd.nu.edu.pk<br>\n  📱 (555) 123-4567</p>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -192
+      ],
+      "id": "78e5a30b-12a5-46a3-9f0a-3049ffa07a99",
+      "name": "Hot Lead Welcome",
+      "webhookId": "eaf80ca1-fdd1-4e31-949d-9602f7c515a0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "=Welcome {{ $node['Lead Scoring & Data Extraction'].json.full_name }}! Your Property Journey Starts Here",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">Welcome {{ $node['Lead Scoring & Data Extraction'].json.full_name }}!</h2>      <p>Thank you for reaching out about {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} a property. I'm excited to help you with your real estate journey!</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">What's Next?</h3>     <ul>       <li>I'll review your preferences and prepare helpful market information</li>       <li>You'll receive valuable real estate insights and tips over the coming weeks</li>       <li>I'll reach out when market conditions align with your timeline</li>       <li>Feel free to contact me anytime your situation changes</li>     </ul>   </div>      <p>No pressure - I'm here when you're ready to take the next step!</p>      <p>Feel free to reply to this email with any questions or call me at <strong>(555) 123-4567</strong>.</p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional<br>   📧 f228773@cfd.nu.edu.pk</p> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "cc2b990c-0e56-4cc7-921f-c1ce36c4389c",
+      "name": "Cold Lead Welcome Email",
+      "webhookId": "68f07245-249f-43ba-a678-5f507408f6ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        -192
+      ],
+      "id": "9eb43d8f-1878-4521-99b1-f19369cf10f1",
+      "name": "Wait 1 Day for Hot Lead Follow-up",
+      "webhookId": "835c7496-299c-4867-902a-4ab79196220b"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        0
+      ],
+      "id": "3a205dd6-1b3f-4643-97f6-10586501ad2e",
+      "name": "Wait 3 Days for Cold Lead Follow-up",
+      "webhookId": "67b297da-6928-477c-9680-fc2f16248f0a"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "=📊 {{ $node['Lead Scoring & Data Extraction'].json.full_name }}, Here's What's Happening in Your Market",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">Market Update for {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }}</h2>      <p>Hi {{ $node['Lead Scoring & Data Extraction'].json.full_name }},</p>      <p>I hope you're doing well! I wanted to share some insights about the current market in {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }}.</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">Current Market Trends:</h3>     <ul>       <li>Average days on market: 25-30 days</li>       <li>Inventory levels are moderate for your {{ $node['Lead Scoring & Data Extraction'].json.budget_range }} price range</li>       <li>Best time to {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} is typically now through next month</li>       <li>{{ $node['Lead Scoring & Data Extraction'].json.current_situation }} buyers are finding great opportunities in today's market</li>     </ul>   </div>      <p>Would you like to schedule a brief call to discuss your specific needs? I'm here when you're ready to take the next step.</p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional<br>   📧 f228773@cfd.nu.edu.pk<br>   📱 (555) 123-4567</p> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1168,
+        -192
+      ],
+      "id": "f8d632f3-dd64-4137-859b-052b689213bf",
+      "name": "Hot Lead 3-Day Follow-up",
+      "webhookId": "1e883874-c74b-4e8c-8e32-2387b312bdd6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 4
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        -192
+      ],
+      "id": "e59edbeb-b7d6-4bda-a33d-2de239e39c01",
+      "name": "Wait 4 More Days",
+      "webhookId": "e9c75d56-64bc-4d57-8e13-42f5eaa3f2a9"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "=🏠 Free Home {{ $node['Lead Scoring & Data Extraction'].json.property_type }} Guide for {{ $node['Lead Scoring & Data Extraction'].json.full_name }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">🏠 Your Personalized {{ $node['Lead Scoring & Data Extraction'].json.property_type }} Guide</h2>      <p>Hi {{ $node['Lead Scoring & Data Extraction'].json.full_name }},</p>      <p>I've put together some exclusive resources specifically for {{ $node['Lead Scoring & Data Extraction'].json.current_situation.toLowerCase() }}s in the {{ $node['Lead Scoring & Data Extraction'].json.budget_range }} range.</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">What's Inside Your Guide:</h3>     <ul>       <li>✅ Top 5 neighborhoods in {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }} for your budget</li>       <li>✅ Current mortgage rates and pre-approval tips</li>       <li>✅ Inspection checklist to avoid costly surprises</li>       <li>✅ Negotiation strategies that save thousands</li>     </ul>   </div>      <p style=\"background: #e8f4fd; padding: 15px; border-radius: 5px; border-left: 4px solid #2c5aa0;\">     <strong>Ready to move forward?</strong> I have 3 properties that match your criteria perfectly. Let's schedule a 15-minute call to discuss them.   </p>      <p>Call me directly: <strong>(555) 123-4567</strong> or reply to this email.</p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional</p> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1616,
+        -192
+      ],
+      "id": "1c2ad42c-ed42-4a1f-a47d-1911a8fc5f83",
+      "name": "7-Day Follow-up Email",
+      "webhookId": "e444499b-4da0-47da-945e-f81b53dbbeaf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        -192
+      ],
+      "id": "1d88962a-6858-4941-9122-fb51bffbab17",
+      "name": "Wait 7 More Days",
+      "webhookId": "9d839c89-c080-4610-99f7-9a39cc066827"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "=🏠 Free {{ $node['Lead Scoring & Data Extraction'].json.property_type }} Guide for {{ $node['Lead Scoring & Data Extraction'].json.full_name }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">🏠 Free {{ $node['Lead Scoring & Data Extraction'].json.property_type }} Guide</h2>      <p>Hi {{ $node['Lead Scoring & Data Extraction'].json.full_name }},</p>      <p>Whether you're planning to move in {{ $node['Lead Scoring & Data Extraction'].json.timeline.toLowerCase() }} or just exploring your options, I wanted to share some valuable insights.</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">Free Resources for You:</h3>     <ul>       <li>📊 Market trends in {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }}</li>       <li>💰 Budget planning worksheet</li>       <li>📋 Step-by-step {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} timeline</li>       <li>🏡 What to look for in your ideal property</li>     </ul>   </div>      <p>No pressure - just helpful information to guide your decision when you're ready.</p>      <p>Questions? Feel free to reach out: <strong>(555) 123-4567</strong></p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional</p> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "fbd43797-647b-4531-8fcf-0efd51e851eb",
+      "name": "Cold Lead 7-Day Follow-up",
+      "webhookId": "15930abb-8cda-49a3-8baf-8ac7a02d85f4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "15d68cbc-a25e-43c3-97bd-d3ab4a259be9",
+      "name": "Wait 7 More Days (Cold)",
+      "webhookId": "6db89a96-f0a8-48e9-8853-f23086e824bd"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "={{ $node['Lead Scoring & Data Extraction'].json.full_name }}, Ready to Take the Next Step?",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">{{ $node['Lead Scoring & Data Extraction'].json.full_name }}, Ready to Take the Next Step?</h2>      <p>Hi {{ $node['Lead Scoring & Data Extraction'].json.full_name }},</p>      <p>It's been a couple of weeks since you expressed interest in {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} a property. I wanted to check in and see how you're doing with your real estate plans.</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">Market Update:</h3>     <p>The {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }} market has some interesting developments:</p>     <ul>       <li>New properties in your {{ $node['Lead Scoring & Data Extraction'].json.budget_range }} range just came on market</li>       <li>Interest rates remain favorable for qualified buyers</li>       <li>Inventory is expected to increase in the coming months</li>     </ul>   </div>      <p style=\"background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;\">     <strong>This is my final automated email.</strong> If you'd like to stay in touch, just reply and let me know. Otherwise, I'll respect your space and you can always reach out when you're ready.   </p>      <p>Thank you for your time, and I wish you the best with your real estate journey!</p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional<br>   📱 (555) 123-4567</p> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1616,
+        0
+      ],
+      "id": "ca7a8a5c-a04c-447f-b88f-039be95b4e1b",
+      "name": "Cold Lead 14-Day Follow-up",
+      "webhookId": "d6cddfc0-b5d2-48de-920e-8827e211d18e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node['Lead Scoring & Data Extraction'].json.email }}",
+        "subject": "={{ $node['Lead Scoring & Data Extraction'].json.full_name }}, Ready to Take the Next Step?",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">   <h2 style=\"color: #2c5aa0;\">{{ $node['Lead Scoring & Data Extraction'].json.full_name }}, Ready to Take the Next Step?</h2>      <p>Hi {{ $node['Lead Scoring & Data Extraction'].json.full_name }},</p>      <p>It's been a couple of weeks since you expressed interest in {{ $node['Lead Scoring & Data Extraction'].json.property_type.toLowerCase() }} a property. I wanted to check in and see how you're doing with your real estate plans.</p>      <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\">     <h3 style=\"color: #2c5aa0; margin-top: 0;\">Market Update:</h3>     <p>The {{ $node['Lead Scoring & Data Extraction'].json.preferred_location }} market has some interesting developments:</p>     <ul>       <li>New properties in your {{ $node['Lead Scoring & Data Extraction'].json.budget_range }} range just came on market</li>       <li>Interest rates remain favorable for qualified buyers</li>       <li>Inventory is expected to increase in the coming months</li>     </ul>   </div>      <p style=\"background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;\">     <strong>This is my final automated email.</strong> If you'd like to stay in touch, just reply and let me know. Otherwise, I'll respect your space and you can always reach out when you're ready.   </p>      <p>Thank you for your time, and I wish you the best with your real estate journey!</p>      <p>Best regards,<br>   <strong>Your Name</strong><br>   Licensed Real Estate Professional<br>   📱 (555) 123-4567</p> </div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2064,
+        -192
+      ],
+      "id": "b258412a-6244-485c-9eee-fa2c42a19370",
+      "name": "14-Day Follow-up Email",
+      "webhookId": "325d244f-f26e-4bfb-a9dc-cf1f6e03811e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "https://tally.so/r/waVgYZ",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        304,
+        -384
+      ],
+      "typeVersion": 1,
+      "id": "0c8657e5-3647-4e9c-88e0-96619673dae3",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Tally Webhook": {
+      "main": [
+        [
+          {
+            "node": "Lead Scoring & Data Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Scoring & Data Extraction": {
+      "main": [
+        [
+          {
+            "node": "CRM Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Storage": {
+      "main": [
+        [
+          {
+            "node": "Lead Qualification Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Qualification Router": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cold Lead Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Welcome": {
+      "main": [
+        [
+          {
+            "node": "Wait 1 Day for Hot Lead Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cold Lead Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 Days for Cold Lead Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1 Day for Hot Lead Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead 3-Day Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead 3-Day Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Wait 4 More Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 4 More Days": {
+      "main": [
+        [
+          {
+            "node": "7-Day Follow-up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7-Day Follow-up Email": {
+      "main": [
+        [
+          {
+            "node": "Wait 7 More Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 7 More Days": {
+      "main": [
+        [
+          {
+            "node": "14-Day Follow-up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 Days for Cold Lead Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Cold Lead 7-Day Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cold Lead 7-Day Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Wait 7 More Days (Cold)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 7 More Days (Cold)": {
+      "main": [
+        [
+          {
+            "node": "Cold Lead 14-Day Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c097dce3-1ac5-4431-8f4e-8d6cc86c1318",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "TrACTbqF3aTAcPYv",
+  "tags": []
+}

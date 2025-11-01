@@ -1,0 +1,772 @@
+{
+  "name": "Media Content Scheduling - Customized for Your Data",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "dda0176b-933e-4cf7-8ce5-925feb16d67e",
+      "name": "Hourly Schedule Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1664,
+        208
+      ],
+      "notes": "Runs every hour to check for scheduled posts"
+    },
+    {
+      "parameters": {},
+      "id": "f33a0b31-fc4f-491b-a53b-7116098162c6",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        400
+      ],
+      "notes": "Use this for testing"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appph29OTUqXNrH1p",
+          "mode": "list",
+          "cachedResultName": "Content Calendar",
+          "cachedResultUrl": "https://airtable.com/appph29OTUqXNrH1p"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblvBKpoR6O0BL51B",
+          "mode": "list",
+          "cachedResultName": "Content Items",
+          "cachedResultUrl": "https://airtable.com/appph29OTUqXNrH1p/tblvBKpoR6O0BL51B"
+        },
+        "filterByFormula": "=AND({Status} = 'Scheduled')",
+        "options": {}
+      },
+      "id": "33a55b12-970c-4961-ac0b-eeb6e04834d1",
+      "name": "Fetch Scheduled Content",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "gCOHRwmOvLsxvpLE",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process the Airtable data for posting\nconst items = [];\nconst now = new Date();\nconst currentHour = now.getHours();\nconst currentMinutes = now.getMinutes();\n\n// TEST MODE - Set to true to post all scheduled items regardless of time\nconst TEST_MODE = true;\n\nconsole.log(`Current time: ${currentHour}:${currentMinutes}`);\nconsole.log('Processing items:', $input.all().length);\nconsole.log('TEST MODE:', TEST_MODE);\n\nfor (const item of $input.all()) {\n  // Access data directly from json object (not fields)\n  const data = item.json;\n  \n  console.log('Processing item:', {\n    id: data.id,\n    time: data['Publish Time'],\n    status: data.Status,\n    date: data['Publish Date']\n  });\n  \n  // Parse the time from the Publish Time field (e.g., \"10:00 AM\" or \"6:45 PM\")\n  const timeStr = data['Publish Time'] || '';\n  const timeMatch = timeStr.match(/(\\d{1,2}):(\\d{2})\\s*(AM|PM)/i);\n  \n  if (!timeMatch) {\n    console.log('Invalid time format:', timeStr);\n    continue;\n  }\n  \n  let hour = parseInt(timeMatch[1]);\n  const minute = parseInt(timeMatch[2]);\n  const period = timeMatch[3].toUpperCase();\n  \n  // Convert to 24-hour format\n  if (period === 'PM' && hour !== 12) {\n    hour += 12;\n  } else if (period === 'AM' && hour === 12) {\n    hour = 0;\n  }\n  \n  console.log(`Post scheduled for ${hour}:${minute}, current hour is ${currentHour}`);\n  \n  // Check if this post should be sent now\n  let shouldPostNow = false;\n  \n  if (TEST_MODE) {\n    // In test mode, post any scheduled item\n    shouldPostNow = data.Status === 'Scheduled';\n    console.log('TEST MODE: Will post all scheduled items');\n  } else {\n    // In normal mode, only post if it's the current hour\n    shouldPostNow = hour === currentHour && data.Status === 'Scheduled';\n  }\n  \n  if (!shouldPostNow) {\n    console.log(`Skipping - scheduled for ${hour}:${minute}, current time ${currentHour}:${currentMinutes}`);\n    continue;\n  }\n  \n  // Parse platforms (it's an array in your data)\n  const platforms = Array.isArray(data.Platform) ? data.Platform : [data.Platform];\n  \n  // Extract media URL from Media array\n  let mediaUrl = '';\n  if (data.Media && Array.isArray(data.Media) && data.Media[0]) {\n    mediaUrl = data.Media[0].url || '';\n  }\n  \n  // Extract hashtags from AI suggestion or use empty\n  const hashtags = data['Suggested Hashtags (AI)']?.value || '';\n  \n  // Prepare the processed item\n  const processedItem = {\n    id: data.id,\n    time: data['Publish Time'],\n    platforms: platforms,\n    scheduledDate: data['Publish Date'],\n    content: data.Content || '',\n    status: data.Status,\n    mediaUrl: mediaUrl,\n    link: data.Link || '',\n    postedDate: data['Posted At'],\n    daysUntil: data['Days Until Publish'],\n    isPosted: data['Is Published?'] === 'Yes',\n    summary: data['Content Summary (AI)']?.value || '',\n    hashtags: hashtags,\n    \n    // Content already includes hashtags in your data, so just use as is\n    fullText: data.Content || '',\n    \n    // Map to Buffer profile IDs (you'll need to update these)\n    bufferProfileIds: []\n  };\n  \n  // Map platforms to Buffer profile IDs\n  // IMPORTANT: Replace these with your actual Buffer profile IDs\n  const bufferProfiles = {\n    'Twitter': 'YOUR_TWITTER_BUFFER_ID',\n    'Facebook': 'YOUR_FACEBOOK_BUFFER_ID', \n    'LinkedIn': 'YOUR_LINKEDIN_BUFFER_ID'\n  };\n  \n  // Build profile IDs array\n  for (const platform of platforms) {\n    if (bufferProfiles[platform]) {\n      processedItem.bufferProfileIds.push(bufferProfiles[platform]);\n    }\n  }\n  \n  console.log('Adding item to post:', processedItem.id, processedItem.platforms);\n  items.push({ json: processedItem });\n}\n\nif (items.length === 0) {\n  return [{\n    json: {\n      message: 'No posts scheduled for this hour',\n      currentTime: `${currentHour}:${currentMinutes}`,\n      checkedItems: $input.all().length,\n      testMode: TEST_MODE,\n      debug: $input.all().map(item => ({\n        id: item.json.id,\n        time: item.json['Publish Time'],\n        status: item.json.Status,\n        scheduledHour: item.json['Publish Time'] ? \n          parseInt(item.json['Publish Time'].match(/(\\d{1,2}):/)[1]) + \n          (item.json['Publish Time'].includes('PM') && !item.json['Publish Time'].includes('12:') ? 12 : 0) : null\n      }))\n    }\n  }];\n}\n\nreturn items;"
+      },
+      "id": "98db9602-4a2e-44bc-8e49-ddb2a4414cbf",
+      "name": "Process Content Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "No posts scheduled for this hour",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "id": "93d604dd-7be7-44e9-bf98-ef87cd4ceaee"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7205ae9e-37d1-413c-869f-5a356a80008a",
+      "name": "Check If Posts Exist",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.bufferapp.com/1/updates/create.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.fullText }}"
+            },
+            {
+              "name": "profile_ids",
+              "value": "={{ $json.bufferProfileIds }}"
+            },
+            {
+              "name": "media[link]",
+              "value": "={{ $json.mediaUrl || '' }}"
+            },
+            {
+              "name": "media[photo]",
+              "value": "={{ $json.mediaAttachment?.[0]?.url || '' }}"
+            },
+            {
+              "name": "shorten",
+              "value": "=true"
+            },
+            {
+              "name": "now",
+              "value": "=true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35e4e4e1-4bf1-4dbe-ab98-077bb513800a",
+      "name": "Post to Buffer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -768,
+        304
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xiswpUtww4cCMpq2",
+          "name": "Header Auth account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "messageWebhook"
+      },
+      "id": "d80b1980-79dc-49c2-873b-be85596cd23c",
+      "name": "Slack Success Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        208
+      ],
+      "webhookId": "37d4099d-e4c1-4b7a-9be6-e24ad6796416",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appph29OTUqXNrH1p",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblvBKpoR6O0BL51B",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Publish Time",
+              "displayName": "Publish Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Twitter",
+                  "value": "Twitter"
+                },
+                {
+                  "name": "Facebook",
+                  "value": "Facebook"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Publish Date",
+              "displayName": "Publish Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Draft",
+                  "value": "Draft"
+                },
+                {
+                  "name": "Scheduled",
+                  "value": "Scheduled"
+                },
+                {
+                  "name": "Posted",
+                  "value": "Posted"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Media",
+              "displayName": "Media",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Posted At",
+              "displayName": "Posted At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Days Until Publish",
+              "displayName": "Days Until Publish",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Is Published?",
+              "displayName": "Is Published?",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Platform List",
+              "displayName": "Platform List",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Content Summary (AI)",
+              "displayName": "Content Summary (AI)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Suggested Hashtags (AI)",
+              "displayName": "Suggested Hashtags (AI)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "68d0963a-b1b8-4923-a95d-1a5ccf1211d4",
+      "name": "Update Airtable Status",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        208
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "gCOHRwmOvLsxvpLE",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "94338eea-3c34-4d7b-ae4b-a82d3fca38a3",
+      "name": "Get Analytics Data",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        16
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appph29OTUqXNrH1p",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Activity_Logs",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5f4b3b99-2e27-4402-a26f-7fb4653bbe81",
+      "name": "Log to Activity Table",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        400
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "gCOHRwmOvLsxvpLE",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "messageWebhook"
+      },
+      "id": "b8cd9d77-bb87-4d30-a80e-78c3b54394bb",
+      "name": "Slack Error Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        592
+      ],
+      "webhookId": "11776a51-a27a-40f6-9395-7821b236f400"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e7303d5b-7acf-41e4-8b60-f80dcb1211d9",
+      "name": "Check for Errors",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        304
+      ]
+    }
+  ],
+  "pinData": {
+    "Fetch Scheduled Content": [
+      {
+        "json": {
+          "id": "recXgaJe4PX1F8hWK",
+          "createdTime": "2025-09-30T18:04:11.000Z",
+          "Publish Time": "11:49 PM",
+          "Platform": [
+            "Twitter",
+            "Facebook"
+          ],
+          "Publish Date": "2025-09-30",
+          "Content": "Join our upcoming webinar on cybersecurity basics for students. Register now to reserve your spot!",
+          "Status": "Scheduled",
+          "Media": [
+            {
+              "id": "attZL4LaepgnWIoLj",
+              "width": 600,
+              "height": 401,
+              "url": "",
+              "filename": "abstract_21.png",
+              "size": 340621,
+              "type": "image/png",
+              "thumbnails": {
+                "small": {
+                  "url": "",
+                  "width": 54,
+                  "height": 36
+                },
+                "large": {
+                  "url": "",
+                  "width": 600,
+                  "height": 401
+                },
+                "full": {
+                  "url": "",
+                  "width": 600,
+                  "height": 401
+                }
+              }
+            }
+          ],
+          "Link": "https://example8534.com/webinar",
+          "Posted At": "2025-10-01",
+          "Days Until Publish": 1,
+          "Is Published?": "No",
+          "Platform List": "Twitter, Facebook",
+          "Content Summary (AI)": {
+            "state": "generated",
+            "value": "Promoting a webinar about cybersecurity basics for students.",
+            "isStale": true
+          },
+          "Suggested Hashtags (AI)": {
+            "state": "generated",
+            "value": "#Cybersecurity #Webinar #StudentLearning",
+            "isStale": true
+          }
+        }
+      },
+      {
+        "json": {
+          "id": "recjQ9cPXf26NlKn0",
+          "createdTime": "2025-09-30T18:04:11.000Z",
+          "Publish Time": "10:00 AM",
+          "Platform": [
+            "Twitter"
+          ],
+          "Publish Date": "2025-10-02",
+          "Content": "Announcing our new IT student project! Stay tuned for updates and behind-the-scenes insights. #StudentLife #TechJourney",
+          "Status": "Scheduled",
+          "Media": [
+            {
+              "id": "attyKmQRUb4kvi3Ux",
+              "width": 600,
+              "height": 401,
+              "url": "",
+              "filename": "abstract_21.png",
+              "size": 340621,
+              "type": "image/png",
+              "thumbnails": {
+                "small": {
+                  "url": "",
+                  "width": 54,
+                  "height": 36
+                },
+                "large": {
+                  "url": "",
+                  "width": 600,
+                  "height": 401
+                },
+                "full": {
+                  "url": "",
+                  "width": 600,
+                  "height": 401
+                }
+              }
+            }
+          ],
+          "Link": "https://example3bf1.com/project",
+          "Posted At": "2025-10-02",
+          "Days Until Publish": 2,
+          "Is Published?": "No",
+          "Platform List": "Twitter",
+          "Content Summary (AI)": {
+            "state": "generated",
+            "value": "Announcing a new IT student project with updates and insights.",
+            "isStale": true
+          },
+          "Suggested Hashtags (AI)": {
+            "state": "generated",
+            "value": "#StudentLife #TechJourney #ITStudent",
+            "isStale": true
+          }
+        }
+      }
+    ],
+    "Post to Buffer": [
+      {
+        "json": {
+          "error": "Credentials not found"
+        }
+      },
+      {
+        "json": {
+          "error": "Credentials not found"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Hourly Schedule Check": {
+      "main": [
+        [
+          {
+            "node": "Fetch Scheduled Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Scheduled Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Scheduled Content": {
+      "main": [
+        [
+          {
+            "node": "Process Content Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Content Data": {
+      "main": [
+        [
+          {
+            "node": "Check If Posts Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Posts Exist": {
+      "main": [
+        [
+          {
+            "node": "Post to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Buffer": {
+      "main": [
+        [
+          {
+            "node": "Check for Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Errors": {
+      "main": [
+        [
+          {
+            "node": "Slack Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Airtable Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Analytics Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Activity Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable Status": {
+      "main": [
+        [
+          {
+            "node": "Slack Success Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1e1e193c-a91f-41d8-a0bc-5fac2fccd289",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "mukufFGoqoZHKtWi",
+  "tags": [
+    {
+      "createdAt": "2025-09-30T18:27:52.360Z",
+      "updatedAt": "2025-09-30T18:27:52.360Z",
+      "id": "PzECbCZgh1UaOIXu",
+      "name": "automation"
+    },
+    {
+      "createdAt": "2025-09-30T18:27:52.382Z",
+      "updatedAt": "2025-09-30T18:27:52.382Z",
+      "id": "hEdNzB0ZMAANJMIj",
+      "name": "content"
+    },
+    {
+      "createdAt": "2025-09-30T18:00:51.779Z",
+      "updatedAt": "2025-09-30T18:00:51.779Z",
+      "id": "y8mcqDQoeh86PzSY",
+      "name": "social-media"
+    }
+  ]
+}

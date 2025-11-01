@@ -1,0 +1,265 @@
+{
+  "name": "Manufacturing - Production Scheduling",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53d187e1-edee-4439-984e-8cab304f8253",
+              "name": "=production_plan",
+              "value": "=$node[\"Get Inventory Levels1\"].json.map(item => {   const demand = $node[\"Get Demand Forecast1\"].json[0].products.find(d => d.sku === item.Product_ID);   const predictedDemand = demand ? demand.predicted_demand : 0;   const currentStock = parseInt(item.Current_Stock);   const minStock = parseInt(item.Min_Stock_Level);   const totalRequired = predictedDemand + minStock;   const productionNeeded = Math.max(0, totalRequired - currentStock);   const stockRatio = currentStock / minStock;   const priority = stockRatio < 0.8 ? 'HIGH' : stockRatio < 1.2 ? 'MEDIUM' : 'LOW';      return {     sku: item.Product_ID,     product_name: item.Product_Name,     current_stock: currentStock,     min_stock: minStock,     predicted_demand: predictedDemand,     production_required: productionNeeded,     priority: priority,     production_date: new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0]   }; }).filter(item => item.production_required > 0)",
+              "type": "string"
+            },
+            {
+              "id": "c627378c-74e2-4732-ba15-f57e25cdc633",
+              "name": "=production_summary",
+              "value": "={   total_items: $json.production_plan.length,   high_priority: $json.production_plan.filter(p => p.priority === 'HIGH').length,   medium_priority: $json.production_plan.filter(p => p.priority === 'MEDIUM').length,   total_units_needed: $json.production_plan.reduce((sum, p) => sum + p.production_required, 0),   generated_at: new Date().toISOString() }",
+              "type": "string"
+            },
+            {
+              "id": "f655024c-2ffd-498a-851a-587f7a619d85",
+              "name": "=email_subject",
+              "value": "=\"Daily Production Schedule - \" + new Date().toLocaleDateString() + \" (\" + $json.production_summary.total_items + \" items)\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        32
+      ],
+      "id": "ecd01645-2a3f-426b-9895-e7f3cdf2615f",
+      "name": "Calculate Production Requirements"
+    },
+    {
+      "parameters": {
+        "sendTo": "production-team@company.com",
+        "subject": "=\"🏭 URGENT: Production Schedule - \" + $json.production_summary.high_priority + \" High Priority Items | \" + new Date().toLocaleDateString()",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Manufacturing Production Schedule</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            margin: 20px;\n            background-color: #f5f5f5;\n        }\n        .container {\n            background-color: white;\n            padding: 30px;\n            border-radius: 8px;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n            max-width: 800px;\n            margin: 0 auto;\n        }\n        h2 {\n            color: #333;\n            border-bottom: 2px solid #007bff;\n            padding-bottom: 10px;\n        }\n        table {\n            width: 100%;\n            border-collapse: collapse;\n            margin: 20px 0;\n        }\n        th, td {\n            padding: 12px;\n            text-align: left;\n            border: 1px solid #ddd;\n        }\n        th {\n            background-color: #007bff;\n            color: white;\n        }\n        tr:nth-child(even) {\n            background-color: #f9f9f9;\n        }\n        .btn-container {\n            text-align: center;\n            margin: 30px 0;\n        }\n        .intake-btn {\n            background-color: #28a745;\n            color: white;\n            padding: 15px 30px;\n            text-decoration: none;\n            border-radius: 5px;\n            font-size: 16px;\n            font-weight: bold;\n            display: inline-block;\n            transition: background-color 0.3s;\n        }\n        .intake-btn:hover {\n            background-color: #218838;\n        }\n        .meta-info {\n            background-color: #e9ecef;\n            padding: 15px;\n            border-radius: 5px;\n            margin: 20px 0;\n        }\n        .footer {\n            text-align: center;\n            color: #666;\n            font-style: italic;\n            margin-top: 30px;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h2>Manufacturing Production Schedule</h2>\n        \n        <div class=\"meta-info\">\n            <p><strong>Date:</strong> {{DateTime.now().toISODate()}}</p>\n            <p><strong>Items Processed:</strong> {{$input.all().length}}</p>\n        </div>\n\n        <table border=\"1\">\n            <tr>\n                <th>Product ID</th>\n                <th>Product Name</th>\n                <th>Current Stock</th>\n                <th>Production Status</th>\n            </tr>\n            {{$input.all().map(item => `\n            <tr>\n                <td>$('Get Inventory Levels1').item.json.Product_ID</td>\n                <td>$('Get Inventory Levels1').item.json.Product_Name</td>\n                <td>$('Get Inventory Levels1').item.json.Current_Stock</td>\n            </tr>\n            `).join('')}}\n        </table>\n\n        <div class=\"btn-container\">\n            <a href=\"https://tally.so/r/nG8BWj\" class=\"intake-btn\" target=\"_blank\">\n                Complete Intake Form\n            </a>\n        </div>\n\n        <div class=\"footer\">\n            <p>Generated by Manufacturing Planning System</p>\n        </div>\n    </div>\n\n    <script>\n        // Script for n8n HTML node - data is injected server-side\n        // No additional JavaScript needed for data population\n    </script>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        576,
+        32
+      ],
+      "id": "3664a162-11f1-43d5-91ba-614d0bab5516",
+      "name": "Send a message",
+      "webhookId": "90d5741f-3455-43e6-ace9-9a1383f3525b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lO9NYoebrlTsshqg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        32
+      ],
+      "id": "3c214c5f-61cb-447d-87be-3aed7fe83af1",
+      "name": "Daily Production Planning1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "169HDH3LW3mSOTeJ-SS4NIxFFIG22n7nB8WsHkJgeyPA",
+          "mode": "list",
+          "cachedResultName": "Manufacturing Inventory Management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/169HDH3LW3mSOTeJ-SS4NIxFFIG22n7nB8WsHkJgeyPA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/169HDH3LW3mSOTeJ-SS4NIxFFIG22n7nB8WsHkJgeyPA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -256,
+        32
+      ],
+      "id": "18e66805-6cbc-41eb-932c-c541771eab88",
+      "name": "Get Inventory Levels1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t7kEe31rprtjYuNo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://manufacturing-erp-api.free.beeceptor.com/api/v1/demand-forecast",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        32
+      ],
+      "id": "d6535690-35a1-4aaa-b271-92d404e6bc5f",
+      "name": "Get Demand Forecast1"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "asimniazi100@gmail.com",
+          "mode": "list",
+          "cachedResultName": "asimniazi100@gmail.com"
+        },
+        "start": "={{ DateTime.now().plus({ days: 1 }).set({ hour: 8, minute: 0 }).toISO({ suppressMilliseconds: true }) }}",
+        "end": "={{ DateTime.now().plus({ days: 1 }).set({ hour: 17, minute: 0 }).toISO({ suppressMilliseconds: true }) }}",
+        "additionalFields": {
+          "description": "=Production plan for 2025-10-08:\\n\\n• Total items: 12\\n• High priority: 5\\n• Medium priority: 4\\n• Total units to produce: 820\\n\\nGenerated at: 2025-10-06T14:32:00Z",
+          "location": "Production Floor - Manufacturing Facility",
+          "summary": "=Daily Production Schedule - 2025-10-08 (12 items)"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        32
+      ],
+      "id": "9f5e9e5b-9e5d-4620-a7eb-26f4ad856027",
+      "name": "Create an event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "zWO8k15tmQBF42so",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Daily Production Planning1": [
+      {
+        "json": {
+          "timestamp": "2025-09-28T02:07:07.500+05:00",
+          "Readable date": "September 28th 2025, 2:07:07 am",
+          "Readable time": "2:07:07 am",
+          "Day of week": "Sunday",
+          "Year": "2025",
+          "Month": "September",
+          "Day of month": "28",
+          "Hour": "02",
+          "Minute": "07",
+          "Second": "07",
+          "Timezone": "Asia/Karachi (UTC+05:00)"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Calculate Production Requirements": {
+      "main": [
+        [
+          {
+            "node": "Create an event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Production Planning1": {
+      "main": [
+        [
+          {
+            "node": "Get Inventory Levels1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inventory Levels1": {
+      "main": [
+        [
+          {
+            "node": "Get Demand Forecast1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Demand Forecast1": {
+      "main": [
+        [
+          {
+            "node": "Calculate Production Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e3bfbbb0-5944-4f16-89e5-07feb80ff80e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aac63ed9029bfed97a145e01395f719fbee87ff03283031f8e7250d6eda938e5"
+  },
+  "id": "KMrNl1LqInNYduc1",
+  "tags": []
+}

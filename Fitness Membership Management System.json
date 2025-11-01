@@ -1,0 +1,1599 @@
+{
+  "name": "Fitness Membership Management System",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "member_id",
+              "name": "Member ID",
+              "value": "={{ $json.memberId }}",
+              "type": "string"
+            },
+            {
+              "id": "first_name",
+              "name": "First Name",
+              "value": "={{ $json.memberData.firstName }}",
+              "type": "string"
+            },
+            {
+              "id": "last_name",
+              "name": "Last Name",
+              "value": "={{ $json.memberData.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "Email",
+              "value": "={{ $json.memberData.email }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "Phone",
+              "value": "={{ $json.memberData.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "membership_type",
+              "name": "Membership Type",
+              "value": "={{ $json.memberData.membershipType }}",
+              "type": "string"
+            },
+            {
+              "id": "start_date",
+              "name": "Start Date",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "expiry_date",
+              "name": "Expiry Date",
+              "value": "={{ $json.expiryDate }}",
+              "type": "string"
+            },
+            {
+              "id": "payment_status",
+              "name": "Payment Status",
+              "value": "={{ $json.data ? 'Completed' : 'Pending' }}",
+              "type": "string"
+            },
+            {
+              "id": "emergency_contact",
+              "name": "Emergency Contact",
+              "value": "={{ $json.memberData.emergencyContact || 'Not provided' }}",
+              "type": "string"
+            },
+            {
+              "id": "medical_conditions",
+              "name": "Medical Conditions",
+              "value": "={{ $json.memberData.medicalConditions || 'None' }}",
+              "type": "string"
+            },
+            {
+              "id": "goals",
+              "name": "Goals",
+              "value": "={{ $json.memberData.fitnessGoals || 'General fitness' }}",
+              "type": "string"
+            },
+            {
+              "id": "preferred_classes",
+              "name": "Preferred Classes",
+              "value": "={{ $json.memberData.preferredClasses || 'All classes' }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "Status",
+              "value": "Active",
+              "type": "string"
+            },
+            {
+              "id": "preferredAssessmentDate",
+              "name": "preferredAssessmentDate",
+              "value": "={{ $json.memberData.preferredAssessmentDate }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8efb5358-458a-49bc-8c6a-1c3b264b51d2",
+      "name": "Format Member Data for Sheets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1248,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "member_id",
+              "name": "Member ID",
+              "value": "={{ $('Fetch Active Members1').item.json[\"Member ID\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "Email",
+              "value": "={{ $('Fetch Active Members1').item.json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "reminder_sent",
+              "name": "Reminder Sent",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "expiry_date",
+              "name": "Expiry Date",
+              "value": "={{ $('Fetch Active Members1').item.json[\"Expiry Date\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "days_until_expiry",
+              "name": "Days Until Expiry",
+              "value": "={{ $json['Expiry Date'] ? Math.ceil(DateTime.fromISO($json['Expiry Date']).diffNow('days').days) : 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6cee2500-905c-48d6-bb10-56aff6bd3453",
+      "name": "Format Renewal Data for Sheets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1008,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "booking_id",
+              "name": "Booking ID",
+              "value": "={{ 'BOOK-' + Math.random().toString(36).substring(2, 9).toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "member_id",
+              "name": "Member ID",
+              "value": "={{ $('Add to Member Database1').item.json[\"Member ID\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "member_name",
+              "name": "Member Name",
+              "value": "={{ $('Add to Member Database1').item.json[\"First Name\"] }}{{ $('Add to Member Database1').item.json[\"Last Name\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "class_type",
+              "name": "Class Type",
+              "value": "Initial Fitness Assessment",
+              "type": "string"
+            },
+            {
+              "id": "date",
+              "name": "Date",
+              "value": "={{ $json.preferredAssessmentDate || $now.plus({ days: 3 }).toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "instructor",
+              "name": "Instructor",
+              "value": "TBD",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "Status",
+              "value": "Confirmed",
+              "type": "string"
+            },
+            {
+              "id": "notes",
+              "name": "Notes",
+              "value": "New member onboarding",
+              "type": "string"
+            },
+            {
+              "id": "googleEventId",
+              "name": "googleEventId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c15767a2-8833-454e-a7bd-1c30d2c936ce",
+      "name": "Format Booking Data for Sheets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://textbelt.com/text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Add to Member Database1').item.json.Phone }}"
+            },
+            {
+              "name": "message",
+              "value": "=Welcome to FitLife Gym,{{ $('Add to Member Database1').item.json[\"First Name\"] }} ! 🎉\n\nYour member ID: {{ $('Add to Member Database1').item.json[\"Member ID\"] }}\n\nYour fitness assessment is scheduled for {{ DateTime.fromISO($json.Date).toFormat('MMM dd at hh:mm a') }}.\n\nDownload our app: https://fitlife.app\n\nReply STOP to unsubscribe."
+            },
+            {
+              "name": "key",
+              "value": "textbelt"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e6b4a52-fb16-49f8-80c4-1609ccc29901",
+      "name": "Send SMS Welcome (TextBelt Free)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        192
+      ],
+      "continueOnFail": true,
+      "notes": "Using TextBelt - 1 free SMS per day"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "membership-signup",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "2d9b51c7-ad71-474b-b424-e56297f8598b",
+      "name": "Membership Signup Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        192
+      ],
+      "webhookId": "fitness-membership-signup"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Membership application received\",\n  \"memberId\": \"{{ $json.memberId }}\",\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "905623bc-d0c4-4985-baaa-35998e68c517",
+      "name": "Webhook Response1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "member-data",
+              "name": "memberData",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "member-id",
+              "name": "memberId",
+              "value": "=MEM-{{ $now.format('yyyyMMdd') }}-{{ Math.random().toString(36).substring(2, 7).toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "payment-amount",
+              "name": "paymentAmount",
+              "value": "={{ $json.membershipType === 'premium' ? 99.99 : $json.membershipType === 'standard' ? 49.99 : 29.99 }}",
+              "type": "number"
+            },
+            {
+              "id": "expiry-date",
+              "name": "expiryDate",
+              "value": "={{ $now.plus({ months: $json.membershipDuration || 1 }).toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "12577f09-526b-4971-93ec-4c859d595283",
+      "name": "Prepare Member Data1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1696,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.lemonsqueezy.com/v1/checkouts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.api+json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/vnd.api+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={\n  \"type\": \"checkouts\",\n  \"attributes\": {\n    \"custom_data\": {\n      \"member_id\": \"{{ $json.memberId }}\",\n      \"email\": \"{{ $json.memberData.email }}\",\n      \"name\": \"{{ $json.memberData.firstName }} {{ $json.memberData.lastName }}\"\n    },\n    \"product_options\": {\n      \"redirect_url\": \"https://your-gym.com/success\",\n      \"receipt_button_text\": \"Go to Dashboard\"\n    },\n    \"checkout_data\": {\n      \"email\": \"{{ $json.memberData.email }}\",\n      \"name\": \"{{ $json.memberData.firstName }} {{ $json.memberData.lastName }}\",\n      \"custom\": {\n        \"membership_type\": \"{{ $json.memberData.membershipType }}\"\n      }\n    }\n  },\n  \"relationships\": {\n    \"store\": {\n      \"data\": {\n        \"type\": \"stores\",\n        \"id\": \"1\"\n      }\n    },\n    \"variant\": {\n      \"data\": {\n        \"type\": \"variants\",\n        \"id\": \"{{ $json.memberData.membershipType === 'premium' ? '1' : $json.memberData.membershipType === 'standard' ? '2' : '3' }}\"\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "bc6c9d7f-48f4-4f2d-b7f1-5319ae49cbdf",
+      "name": "Process Payment (Lemon Squeezy)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1472,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xiswpUtww4cCMpq2",
+          "name": "Header Auth account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Free alternative to Stripe - Lemon Squeezy offers free tier"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ",
+          "mode": "list",
+          "cachedResultName": "Members",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 794978563,
+          "mode": "list",
+          "cachedResultName": "Project id's",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ/edit#gid=794978563"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Member ID",
+              "displayName": "Member ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Membership Type",
+              "displayName": "Membership Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Start Date",
+              "displayName": "Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expiry Date",
+              "displayName": "Expiry Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment Status",
+              "displayName": "Payment Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Emergency Contact",
+              "displayName": "Emergency Contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Medical Conditions",
+              "displayName": "Medical Conditions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Goals",
+              "displayName": "Goals",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Classes",
+              "displayName": "Preferred Classes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "e160c4df-a8d6-44c3-94af-9b5a2d5dfeb8",
+      "name": "Add to Member Database1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1024,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Free alternative to Airtable"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "Welcome to FitLife Gym! 🎉",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }\n        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }\n        .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }\n        .classes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; }\n        .class-item { background: #e9ecef; padding: 10px; border-radius: 5px; text-align: center; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Welcome to FitLife Gym!</h1>\n            <p>Your fitness journey starts now</p>\n        </div>\n        <div class=\"content\">\n            <h2>Hi {{ $json['First Name'] }}! 👋</h2>\n            <p>Congratulations on taking the first step towards a healthier you! Your <strong>{{ $json['Membership Type'] }}</strong> membership is now active.</p>\n            \n            <div class=\"info-box\">\n                <h3>📋 Your Membership Details:</h3>\n                <ul>\n                    <li><strong>Member ID:</strong> {{ $json['Member ID'] }}</li>\n                    <li><strong>Membership Type:</strong> {{ $json['Membership Type'] }}</li>\n                    <li><strong>Start Date:</strong> {{ DateTime.fromISO($json['Start Date']).toFormat('MMMM dd, yyyy') }}</li>\n                    <li><strong>Valid Until:</strong> {{ DateTime.fromISO($json['Expiry Date']).toFormat('MMMM dd, yyyy') }}</li>\n                </ul>\n            </div>\n\n            <div class=\"info-box\">\n                <h3>🎯 Your Fitness Goals:</h3>\n                <p>{{ $json.Goals }}</p>\n            </div>\n\n            <div class=\"info-box\">\n                <h3>📱 Digital Access Card</h3>\n                <p>Show this QR code at the gym entrance:</p>\n                <div style=\"text-align: center; padding: 20px; background: white; border-radius: 8px;\">\n                    <img src=\"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ $json['Member ID'] }}\" alt=\"QR Code\">\n                    <p style=\"font-size: 12px; color: #666;\">Member ID: {{ $json['Member ID'] }}</p>\n                </div>\n            </div>\n\n            <div class=\"info-box\">\n                <h3>🏋️ Available Classes</h3>\n                <p>As a {{ $json['Membership Type'] }} member, you have access to:</p>\n                <div class=\"classes-grid\">\n                    <div class=\"class-item\">💪 Strength Training</div>\n                    <div class=\"class-item\">🧘 Yoga</div>\n                    <div class=\"class-item\">🏃 HIIT</div>\n                    <div class=\"class-item\">🥊 Boxing</div>\n                    <div class=\"class-item\">🚴 Spinning</div>\n                    <div class=\"class-item\">🤸 Pilates</div>\n                </div>\n            </div>\n\n            <div class=\"info-box\">\n                <h3>📅 Book Your First Class</h3>\n                <p>Ready to get started? Check your email for your fitness assessment appointment!</p>\n                <a href=\"https://calendar.google.com\" class=\"button\">View in Google Calendar</a>\n            </div>\n\n            <div class=\"info-box\">\n                <h3>📞 Gym Information</h3>\n                <ul>\n                    <li><strong>Hours:</strong> Mon-Fri: 5AM-11PM | Sat-Sun: 6AM-10PM</li>\n                    <li><strong>Address:</strong> 123 Fitness Street, Health City, HC 12345</li>\n                    <li><strong>Phone:</strong> (555) 123-4567</li>\n                    <li><strong>Emergency:</strong> (555) 999-8888</li>\n                </ul>\n            </div>\n\n            <p style=\"text-align: center; margin-top: 30px;\">\n                <a href=\"https://fitlife-gym.com/member-portal\" class=\"button\">Access Member Portal</a>\n                <a href=\"https://fitlife-gym.com/app\" class=\"button\" style=\"background: #28a745;\">Download Mobile App</a>\n            </p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "replyTo": "support@fitlife-gym.com"
+        }
+      },
+      "id": "ac8864bb-a169-4d5c-9508-42e947b1c498",
+      "name": "Send Welcome Email1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        192
+      ],
+      "webhookId": "e1d41c16-cf4c-4fed-8eac-cabf0a33f30b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "8db87d6b-62d2-499a-89de-7b28d9880437",
+      "name": "Daily Renewal Check1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1920,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ",
+          "mode": "list",
+          "cachedResultName": "Members",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 794978563,
+          "mode": "list",
+          "cachedResultName": "Project id's",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18mLNpPjz8-cOMturhF5_XsJViTc1bdV1FwEzshKQiCQ/edit#gid=794978563"
+        },
+        "options": {}
+      },
+      "id": "84f3ce49-f3d3-45f2-9c77-8b023b874f28",
+      "name": "Fetch Active Members1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1696,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "expiry-check",
+              "leftValue": "={{ DateTime.fromISO($json['Expiry Date']).diffNow('days').days }}",
+              "rightValue": 30,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "54603f1a-6c93-4551-902d-5f8df7846aa0",
+      "name": "Members Expiring in 30 Days1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -1472,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email'] }}",
+        "subject": "⏰ Your FitLife Membership is Expiring Soon!",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }\n        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }\n        .button { display: inline-block; padding: 12px 30px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 10px 5px; }\n        .offer-box { background: white; border: 2px dashed #28a745; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>⏰ Membership Renewal Reminder</h1>\n            <p>Don't let your fitness journey stop!</p>\n        </div>\n        <div class=\"content\">\n            <h2>Hi {{ $json['First Name'] }}!</h2>\n            \n            <div class=\"warning-box\">\n                <strong>⚠️ Important Notice:</strong>\n                <p>Your {{ $json['Membership Type'] }} membership will expire on <strong>{{ DateTime.fromISO($json['Expiry Date']).toFormat('MMMM dd, yyyy') }}</strong></p>\n                <p>That's only <strong>{{ Math.ceil(DateTime.fromISO($json['Expiry Date']).diffNow('days').days) }} days</strong> from now!</p>\n            </div>\n\n            <div class=\"offer-box\">\n                <h3>🎁 EXCLUSIVE RENEWAL OFFER!</h3>\n                <p style=\"font-size: 24px; color: #28a745; font-weight: bold;\">Save 20% on Early Renewal</p>\n                <p>Renew before {{ DateTime.fromISO($json['Expiry Date']).minus({ days: 7 }).toFormat('MMMM dd') }} and get:</p>\n                <ul style=\"text-align: left; display: inline-block;\">\n                    <li>20% discount on your next period</li>\n                    <li>Free personal training session</li>\n                    <li>Complimentary body composition analysis</li>\n                    <li>Priority class booking for 3 months</li>\n                </ul>\n            </div>\n\n            <h3>📊 Your Membership Summary:</h3>\n            <ul>\n                <li><strong>Member Since:</strong> {{ DateTime.fromISO($json['Start Date']).toFormat('MMMM dd, yyyy') }}</li>\n                <li><strong>Current Plan:</strong> {{ $json['Membership Type'] }}</li>\n                <li><strong>Member ID:</strong> {{ $json['Member ID'] }}</li>\n            </ul>\n\n            <div style=\"text-align: center; margin: 30px 0;\">\n                <a href=\"https://fitlife-gym.com/renew/{{ $json['Member ID'] }}\" class=\"button\">Renew Now & Save 20%</a>\n                <a href=\"https://fitlife-gym.com/upgrade\" class=\"button\" style=\"background: #667eea;\">Explore Upgrade Options</a>\n            </div>\n\n            <p style=\"text-align: center; color: #666; font-size: 14px;\">\n                Questions? Call us at (555) 123-4567 or reply to this email.<br>\n                <a href=\"https://fitlife-gym.com/unsubscribe\" style=\"color: #999;\">Unsubscribe from reminders</a>\n            </p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {
+          "replyTo": "renewals@fitlife-gym.com"
+        }
+      },
+      "id": "dbc349fc-fbf9-4bfb-b880-b3aac87a77c3",
+      "name": "Send Renewal Reminder1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1248,
+        400
+      ],
+      "webhookId": "a6e1a592-a618-4d2d-a289-4d6e15feb9e6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1u8CI3Ps6jZkM0ggymSVQpLns21M8YpKA2onssXk0EVo",
+          "mode": "list",
+          "cachedResultName": "RenewalsSent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u8CI3Ps6jZkM0ggymSVQpLns21M8YpKA2onssXk0EVo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u8CI3Ps6jZkM0ggymSVQpLns21M8YpKA2onssXk0EVo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Member ID",
+              "displayName": "Member ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Sent",
+              "displayName": "Reminder Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expiry Date",
+              "displayName": "Expiry Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days Until Expiry",
+              "displayName": "Days Until Expiry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "aa945d1e-bed9-4156-acc5-0fdd80970dd5",
+      "name": "Log Reminder Sent1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -768,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ahmad.imdad007@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ahmad.imdad007@gmail.com"
+        },
+        "start": "={{ $json.preferredAssessmentDate || $now.plus({ days: 3 }).toISO() }}",
+        "end": "={{ DateTime.fromISO($json.preferredAssessmentDate || $now.plus({ days: 3 }).toISO()).plus({ hours: 1 }).toISO() }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $('Add to Member Database1').item.json.Email }}"
+          ],
+          "description": "=Member ID: {{ $('Add to Member Database1').item.json['Member ID'] }}\nMembership Type: {{ $('Add to Member Database1').item.json['Membership Type'] }}\nFitness Goals: {{ $('Add to Member Database1').item.json.Goals }}\nPhone: {{ $('Add to Member Database1').item.json.Phone }}\n\nNew member fitness assessment - Please bring:\n- Comfortable workout clothes\n- Athletic shoes\n- Water bottle\n- Towel",
+          "location": "FitLife Gym - Main Floor, 123 Fitness Street, Health City",
+          "sendUpdates": "all",
+          "summary": "=Fitness Assessment - {{ $('Add to Member Database1').item.json['First Name'] }}"
+        }
+      },
+      "id": "0c889136-11ef-4ae5-beee-ba1e1a6bce84",
+      "name": "Book Initial Assessment (Google Calendar)",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        192
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YPVmMOvSB8C8j3zh",
+          "name": "Google Calendar account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Using Google Calendar - FREE and works with existing Google account"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "13hF2AalwN-HN38ptHHOunyW5hEVP61BsRdJURH672yQ",
+          "mode": "list",
+          "cachedResultName": "ClassBookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13hF2AalwN-HN38ptHHOunyW5hEVP61BsRdJURH672yQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13hF2AalwN-HN38ptHHOunyW5hEVP61BsRdJURH672yQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Booking ID",
+              "displayName": "Booking ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Member ID",
+              "displayName": "Member ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Member Name",
+              "displayName": "Member Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Class Type",
+              "displayName": "Class Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instructor",
+              "displayName": "Instructor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "84008d39-6fc2-416d-93be-74306f8462ce",
+      "name": "Log Class Booking1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -128,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Add to Member Database1').item.json.Email }}",
+        "subject": "📅 Your Fitness Assessment is Booked!",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }\n        .content { background: #f9f9f9; padding: 20px; }\n        .button { background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h2>Fitness Assessment Confirmed!</h2>\n        </div>\n        <div class=\"content\">\n            <p>Hi {{ $json['First Name'] }},</p>\n            <p>Your complimentary fitness assessment has been scheduled!</p>\n            <p><strong>Check your email for the Google Calendar invite with all the details.</strong></p>\n            <ul>\n                <li><strong>Date:</strong> {{ DateTime.fromISO($json.Date).toFormat('EEEE, MMMM dd, yyyy') }}</li>\n                <li><strong>Time:</strong> {{ DateTime.fromISO($json.Date).toFormat('hh:mm a') }}</li>\n                <li><strong>Duration:</strong> 60 minutes</li>\n                <li><strong>Location:</strong> FitLife Gym - Main Floor</li>\n            </ul>\n            <p>What to bring:</p>\n            <ul>\n                <li>Comfortable workout clothes</li>\n                <li>Athletic shoes</li>\n                <li>Water bottle</li>\n                <li>Towel</li>\n            </ul>\n            <p style=\"text-align: center; margin-top: 30px;\">\n                <a href=\"https://calendar.google.com\" class=\"button\">View in Google Calendar</a>\n            </p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "f6b2d758-5e45-4b12-8aee-f053297f3220",
+      "name": "Send Assessment Confirmation1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        96,
+        192
+      ],
+      "webhookId": "f0d0cfe8-603c-417e-adce-3c1da401bc3d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Membership Signup Webhook1": [
+      {
+        "json": {
+          "firstName": "John",
+          "lastName": "Doe",
+          "email": "john.doe@email.com",
+          "phone": "+1234567890",
+          "membershipType": "premium",
+          "membershipDuration": 1,
+          "emergencyContact": "Jane Doe (555-0199)",
+          "medicalConditions": "None",
+          "fitnessGoals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "preferredClasses": "HIIT, Strength Training, Yoga",
+          "preferredAssessmentDate": "2024-12-20T10:00:00Z",
+          "marketingConsent": true,
+          "termsAccepted": true,
+          "referralSource": "Google",
+          "dateOfBirth": "1990-05-15",
+          "address": {
+            "street": "123 Main St",
+            "city": "New York",
+            "state": "NY",
+            "zipCode": "10001",
+            "country": "USA"
+          }
+        }
+      }
+    ],
+    "Process Payment (Lemon Squeezy)1": [
+      {
+        "json": {
+          "data": {
+            "type": "checkouts",
+            "id": "01h9x7a8kqg3jyz2w3xvznt6d8",
+            "attributes": {
+              "store_id": 12345,
+              "variant_id": 67890,
+              "custom_price": null,
+              "product_options": {
+                "name": "Premium Gym Membership",
+                "description": "Monthly premium membership with all benefits",
+                "media": [],
+                "redirect_url": "https://your-gym.com/success",
+                "receipt_button_text": "Go to Dashboard",
+                "receipt_link_url": "https://your-gym.com/dashboard",
+                "receipt_thank_you_note": "Welcome to FitLife Gym!",
+                "enabled_variants": [
+                  67890
+                ]
+              },
+              "checkout_options": {
+                "embed": false,
+                "media": true,
+                "logo": true,
+                "desc": true,
+                "discount": false,
+                "dark": false,
+                "subscription_preview": true,
+                "background_color": "#ffffff",
+                "button_color": "#667eea"
+              },
+              "checkout_data": {
+                "email": "john.doe@email.com",
+                "name": "John Doe",
+                "billing_address": {
+                  "country": "US",
+                  "zip": "10001"
+                },
+                "tax_number": null,
+                "discount_code": null,
+                "custom": {
+                  "member_id": "MEM-20241215-ABC12",
+                  "membership_type": "premium"
+                }
+              },
+              "expires_at": "2024-12-15T15:30:00.000000Z",
+              "created_at": "2024-12-15T14:30:00.000000Z",
+              "updated_at": "2024-12-15T14:30:00.000000Z",
+              "test_mode": false,
+              "url": "https://app.lemonsqueezy.com/checkout/custom/01h9x7a8kqg3jyz2w3xvznt6d8"
+            },
+            "relationships": {
+              "store": {
+                "links": {
+                  "related": "https://api.lemonsqueezy.com/v1/checkouts/01h9x7a8kqg3jyz2w3xvznt6d8/store",
+                  "self": "https://api.lemonsqueezy.com/v1/checkouts/01h9x7a8kqg3jyz2w3xvznt6d8/relationships/store"
+                }
+              },
+              "variant": {
+                "links": {
+                  "related": "https://api.lemonsqueezy.com/v1/checkouts/01h9x7a8kqg3jyz2w3xvznt6d8/variant",
+                  "self": "https://api.lemonsqueezy.com/v1/checkouts/01h9x7a8kqg3jyz2w3xvznt6d8/relationships/variant"
+                }
+              }
+            }
+          },
+          "jsonapi": {
+            "version": "1.0"
+          },
+          "links": {
+            "self": "https://api.lemonsqueezy.com/v1/checkouts/01h9x7a8kqg3jyz2w3xvznt6d8"
+          },
+          "memberId": "MEM-20241215-ABC12",
+          "memberData": {
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@email.com",
+            "phone": "+1234567890",
+            "membershipType": "premium",
+            "membershipDuration": 1,
+            "emergencyContact": "Jane Doe (555-0199)",
+            "medicalConditions": "None",
+            "fitnessGoals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+            "preferredClasses": "HIIT, Strength Training, Yoga",
+            "preferredAssessmentDate": "2024-12-20T10:00:00Z"
+          },
+          "paymentAmount": 99.99,
+          "expiryDate": "2025-01-15T14:30:00.000Z"
+        }
+      }
+    ],
+    "Send Assessment Confirmation1": [
+      {
+        "json": {
+          "id": "199abebe8f433b00",
+          "threadId": "199abebe8f433b00",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      }
+    ],
+    "Format Booking Data for Sheets": [
+      {
+        "json": {
+          "Booking ID": "BOOK-E4AMBEU",
+          "Member ID": "MEM-20241215-ABC12",
+          "Member Name": "JohnDoe",
+          "Class Type": "Initial Fitness Assessment",
+          "Date": "2025-10-07T02:12:18.163+05:00",
+          "Instructor": "TBD",
+          "Status": "Confirmed",
+          "Notes": "New member onboarding",
+          "googleEventId": "b67r7dtuv89ld2vt9emqjlh08s"
+        }
+      }
+    ],
+    "Log Class Booking1": [
+      {
+        "json": {
+          "Booking ID": "BOOK-E4AMBEU",
+          "Member ID": "MEM-20241215-ABC12",
+          "Member Name": "JohnDoe",
+          "Class Type": "Initial Fitness Assessment",
+          "Date": "2025-10-07T02:12:18.163+05:00",
+          "Instructor": "TBD",
+          "Status": "Confirmed",
+          "Notes": "New member onboarding",
+          "googleEventId": "b67r7dtuv89ld2vt9emqjlh08s"
+        }
+      }
+    ],
+    "Add to Member Database1": [
+      {
+        "json": {
+          "Member ID": "MEM-20241215-ABC12",
+          "First Name": "John",
+          "Last Name": "Doe",
+          "Email": "john.doe@email.com",
+          "Phone": "+1234567890",
+          "Membership Type": "premium",
+          "Start Date": "2025-10-04T02:05:55.731+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Doe (555-0199)",
+          "Medical Conditions": "None",
+          "Goals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "Preferred Classes": "HIIT, Strength Training, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": "2024-12-20T10:00:00Z"
+        }
+      }
+    ],
+    "Fetch Active Members1": [
+      {
+        "json": {
+          "row_number": 2,
+          "Member ID": "MEM-20241201-ABC12",
+          "First Name": "John",
+          "Last Name": "Smith",
+          "Email": "john.smith@email.com",
+          "Phone": 1234567890,
+          "Membership Type": "Premium",
+          "Start Date": "2024-12-01T10:00:00Z",
+          "Expiry Date": "2025-01-01T10:00:00Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Smith (555-0101)",
+          "Medical Conditions": "None",
+          "Goals": "Weight loss, muscle gain",
+          "Preferred Classes": "HIIT, Strength Training",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 3,
+          "Member ID": "MEM-20241202-DEF34",
+          "First Name": "Sarah",
+          "Last Name": "Johnson",
+          "Email": "sarah.j@email.com",
+          "Phone": 1234567891,
+          "Membership Type": "Standard",
+          "Start Date": "2024-12-02T14:00:00Z",
+          "Expiry Date": "2025-03-02T14:00:00Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Mike Johnson (555-0102)",
+          "Medical Conditions": "Asthma",
+          "Goals": "Cardio fitness",
+          "Preferred Classes": "Yoga, Spinning",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 4,
+          "Member ID": "MEM-20241203-GHI56",
+          "First Name": "Michael",
+          "Last Name": "Brown",
+          "Email": "m.brown@email.com",
+          "Phone": 1234567892,
+          "Membership Type": "Basic",
+          "Start Date": "2024-12-03T09:00:00Z",
+          "Expiry Date": "2025-01-03T09:00:00Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Lisa Brown (555-0103)",
+          "Medical Conditions": "None",
+          "Goals": "General fitness",
+          "Preferred Classes": "Boxing, HIIT",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "Member ID": "MEM-20241204-JKL78",
+          "First Name": "Emma",
+          "Last Name": "Davis",
+          "Email": "emma.davis@email.com",
+          "Phone": 1234567893,
+          "Membership Type": "Premium",
+          "Start Date": "2024-12-04T11:00:00Z",
+          "Expiry Date": "2025-12-04T11:00:00Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Tom Davis (555-0104)",
+          "Medical Conditions": "Bad knee",
+          "Goals": "Flexibility, strength",
+          "Preferred Classes": "Pilates, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "Member ID": "MEM-20241205-MNO90",
+          "First Name": "Robert",
+          "Last Name": "Wilson",
+          "Email": "r.wilson@email.com",
+          "Phone": 1234567894,
+          "Membership Type": "Standard",
+          "Start Date": "2024-12-05T13:00:00Z",
+          "Expiry Date": "2025-03-05T13:00:00Z",
+          "Payment Status": "Pending",
+          "Emergency Contact": "Amy Wilson (555-0105)",
+          "Medical Conditions": "Diabetes Type 2",
+          "Goals": "Weight loss",
+          "Preferred Classes": "Spinning, Swimming",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "Member ID": "MEM-20241215-ABC12",
+          "First Name": "John",
+          "Last Name": "Doe",
+          "Email": "john.doe@email.com",
+          "Phone": 1234567890,
+          "Membership Type": "premium",
+          "Start Date": "2025-10-04T00:56:50.862+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Doe (555-0199)",
+          "Medical Conditions": "None",
+          "Goals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "Preferred Classes": "HIIT, Strength Training, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 8,
+          "Member ID": "MEM-20241215-ABC12",
+          "First Name": "John",
+          "Last Name": "Doe",
+          "Email": "john.doe@email.com",
+          "Phone": 1234567890,
+          "Membership Type": "premium",
+          "Start Date": "2025-10-04T00:56:50.862+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Doe (555-0199)",
+          "Medical Conditions": "None",
+          "Goals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "Preferred Classes": "HIIT, Strength Training, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 9,
+          "Member ID": "MEM-20241215-ABC12",
+          "First Name": "John",
+          "Last Name": "Doe",
+          "Email": "john.doe@email.com",
+          "Phone": 1234567890,
+          "Membership Type": "premium",
+          "Start Date": "2025-10-04T01:19:48.182+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Doe (555-0199)",
+          "Medical Conditions": "None",
+          "Goals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "Preferred Classes": "HIIT, Strength Training, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": ""
+        }
+      },
+      {
+        "json": {
+          "row_number": 10,
+          "Member ID": "MEM-20241215-ABC12",
+          "First Name": "John",
+          "Last Name": "Doe",
+          "Email": "john.doe@email.com",
+          "Phone": 1234567890,
+          "Membership Type": "premium",
+          "Start Date": "2025-10-04T02:05:55.731+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Payment Status": "Completed",
+          "Emergency Contact": "Jane Doe (555-0199)",
+          "Medical Conditions": "None",
+          "Goals": "Lose 10 pounds, build muscle, improve cardiovascular health",
+          "Preferred Classes": "HIIT, Strength Training, Yoga",
+          "Status": "Active",
+          "preferredAssessmentDate": "2024-12-20T10:00:00Z"
+        }
+      }
+    ],
+    "Log Reminder Sent1": [
+      {
+        "json": {
+          "Member ID": "MEM-20241201-ABC12",
+          "Email": "john.smith@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.484+05:00",
+          "Expiry Date": "2025-01-01T10:00:00Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241202-DEF34",
+          "Email": "sarah.j@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.485+05:00",
+          "Expiry Date": "2025-03-02T14:00:00Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241203-GHI56",
+          "Email": "m.brown@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.486+05:00",
+          "Expiry Date": "2025-01-03T09:00:00Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241205-MNO90",
+          "Email": "r.wilson@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.487+05:00",
+          "Expiry Date": "2025-03-05T13:00:00Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241215-ABC12",
+          "Email": "john.doe@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.489+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241215-ABC12",
+          "Email": "john.doe@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.490+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241215-ABC12",
+          "Email": "john.doe@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.491+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Days Until Expiry": 0
+        }
+      },
+      {
+        "json": {
+          "Member ID": "MEM-20241215-ABC12",
+          "Email": "john.doe@email.com",
+          "Reminder Sent": "2025-10-04T02:18:02.493+05:00",
+          "Expiry Date": "2025-01-15T14:30:00.000Z",
+          "Days Until Expiry": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Format Member Data for Sheets": {
+      "main": [
+        [
+          {
+            "node": "Add to Member Database1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Booking Data for Sheets": {
+      "main": [
+        [
+          {
+            "node": "Log Class Booking1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send SMS Welcome (TextBelt Free)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Renewal Data for Sheets": {
+      "main": [
+        [
+          {
+            "node": "Log Reminder Sent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Membership Signup Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Member Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Member Data1": {
+      "main": [
+        [
+          {
+            "node": "Process Payment (Lemon Squeezy)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Payment (Lemon Squeezy)1": {
+      "main": [
+        [
+          {
+            "node": "Format Member Data for Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Member Database1": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email1": {
+      "main": [
+        [
+          {
+            "node": "Book Initial Assessment (Google Calendar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Renewal Check1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Members1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Members1": {
+      "main": [
+        [
+          {
+            "node": "Members Expiring in 30 Days1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Members Expiring in 30 Days1": {
+      "main": [
+        [
+          {
+            "node": "Send Renewal Reminder1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Renewal Reminder1": {
+      "main": [
+        [
+          {
+            "node": "Format Renewal Data for Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Initial Assessment (Google Calendar)": {
+      "main": [
+        [
+          {
+            "node": "Format Booking Data for Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Class Booking1": {
+      "main": [
+        [
+          {
+            "node": "Send Assessment Confirmation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Assessment Confirmation1": {
+      "main": [
+        [
+          {
+            "node": "Send SMS Welcome (TextBelt Free)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6d1b2bb5-1647-4cdd-8b26-53a66b92a891",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "yughq5f11ultg6Zt",
+  "tags": []
+}

@@ -1,0 +1,588 @@
+{
+  "name": "Construction Project Scheduling Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/construction-project-start",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f053f767-fbf5-48e1-9273-cfbc5096471b",
+      "name": "Webhook",
+      "webhookId": "2ae65d6b-e974-4220-903a-94730987b04b",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "hv5TdvEUjDSL74sJ",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick the payload correctly (works with or without \"body\")\nconst input = items[0].json;\nconst data = input.body ? input.body : input;\n\n// Define the required schema with expected types\nconst schema = {\n  projectId: \"string\",\n  projectName: \"string\",\n  clientName: \"string\",\n  startDate: \"string\",          // you could later validate ISO date format\n  estimatedDuration: \"number\",\n  budget: \"number\",\n  projectManager: \"string\",\n  crewMembers: \"object\",        // should be an array of objects\n  phases: \"object\"              // should be an array of objects\n};\n\n// Define required fields for crew members\nconst crewMemberSchema = {\n  name: \"string\",\n  phone: \"string\",\n  email: \"string\",\n  role: \"string\"  // Optional but recommended\n};\n\n// Define required fields for phases\nconst phaseSchema = {\n  name: \"string\",\n  duration: \"number\",\n  description: \"string\"\n};\n\nlet errors = [];\n\n// Basic field validation\nfor (const field in schema) {\n  if (!(field in data)) {\n    errors.push(`Missing field: ${field}`);\n  } else {\n    const expectedType = schema[field];\n    let actualType = Array.isArray(data[field]) ? \"object\" : typeof data[field];\n    if (actualType !== expectedType) {\n      errors.push(\n        `Invalid type for ${field}. Expected ${expectedType}, got ${actualType}`\n      );\n    }\n  }\n}\n\n// Validate crew members array\nif (data.crewMembers && Array.isArray(data.crewMembers)) {\n  if (data.crewMembers.length === 0) {\n    errors.push(\"crewMembers array cannot be empty\");\n  } else {\n    // Check each crew member\n    data.crewMembers.forEach((member, index) => {\n      // Check for required fields\n      for (const field in crewMemberSchema) {\n        if (!(field in member)) {\n          errors.push(`crewMembers[${index}] missing required field: ${field}`);\n        } else if (typeof member[field] !== crewMemberSchema[field]) {\n          errors.push(\n            `crewMembers[${index}].${field} invalid type. Expected ${crewMemberSchema[field]}, got ${typeof member[field]}`\n          );\n        } else if (member[field] === \"\" || member[field] === null) {\n          errors.push(`crewMembers[${index}].${field} cannot be empty`);\n        }\n      }\n      \n      // Validate phone format (basic check for + and digits)\n      if (member.phone && !member.phone.match(/^\\+?[\\d\\s-()]+$/)) {\n        errors.push(`crewMembers[${index}].phone has invalid format: ${member.phone}`);\n      }\n      \n      // Validate email format\n      if (member.email && !member.email.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)) {\n        errors.push(`crewMembers[${index}].email has invalid format: ${member.email}`);\n      }\n    });\n  }\n}\n\n// Validate phases array\nif (data.phases && Array.isArray(data.phases)) {\n  if (data.phases.length === 0) {\n    errors.push(\"phases array cannot be empty\");\n  } else {\n    // Check each phase\n    data.phases.forEach((phase, index) => {\n      for (const field in phaseSchema) {\n        if (!(field in phase)) {\n          errors.push(`phases[${index}] missing required field: ${field}`);\n        } else if (typeof phase[field] !== phaseSchema[field]) {\n          errors.push(\n            `phases[${index}].${field} invalid type. Expected ${phaseSchema[field]}, got ${typeof phase[field]}`\n          );\n        } else if (phase[field] === \"\" || phase[field] === null) {\n          errors.push(`phases[${index}].${field} cannot be empty`);\n        }\n      }\n      \n      // Validate duration is positive\n      if (phase.duration && phase.duration <= 0) {\n        errors.push(`phases[${index}].duration must be greater than 0`);\n      }\n    });\n  }\n}\n\n// Validate date format (ISO 8601)\nif (data.startDate && !data.startDate.match(/^\\d{4}-\\d{2}-\\d{2}$/)) {\n  errors.push(`startDate must be in YYYY-MM-DD format. Got: ${data.startDate}`);\n}\n\n// Validate budget is positive\nif (data.budget && data.budget <= 0) {\n  errors.push(\"budget must be greater than 0\");\n}\n\n// Validate estimated duration is positive\nif (data.estimatedDuration && data.estimatedDuration <= 0) {\n  errors.push(\"estimatedDuration must be greater than 0\");\n}\n\n// Validate project manager email format\nif (data.projectManager && !data.projectManager.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)) {\n  errors.push(`projectManager must be a valid email address. Got: ${data.projectManager}`);\n}\n\n// Calculate total phase duration if phases exist\nif (data.phases && Array.isArray(data.phases) && data.phases.length > 0) {\n  const totalPhaseDuration = data.phases.reduce((sum, phase) => sum + (phase.duration || 0), 0);\n  if (totalPhaseDuration !== data.estimatedDuration) {\n    errors.push(\n      `Total phase duration (${totalPhaseDuration} days) doesn't match estimatedDuration (${data.estimatedDuration} days)`\n    );\n  }\n}\n\n// Return response\nif (errors.length > 0) {\n  return [\n    {\n      json: {\n        success: false,\n        message: \"Invalid request - validation failed\",\n        errorCount: errors.length,\n        errors: errors,\n        receivedData: data\n      }\n    }\n  ];\n}\n\n// If validation passes, return success with parsed data\nreturn [\n  {\n    json: {\n      success: true,\n      message: \"Webhook data received and validated successfully\",\n      summary: {\n        projectName: data.projectName,\n        client: data.clientName,\n        totalBudget: data.budget,\n        duration: `${data.estimatedDuration} days`,\n        crewCount: data.crewMembers.length,\n        phaseCount: data.phases.length,\n        projectManager: data.projectManager\n      },\n      data: data,\n      validation: {\n        allFieldsPresent: true,\n        crewMembersValid: true,\n        phasesValid: true,\n        datesValid: true,\n        timestamp: new Date().toISOString()\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4750cb18-3273-4559-a623-9e46a9e843a1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6cce32da-af94-4063-a723-f1b0added2ee",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c3af25e0-ec88-41d9-a439-708c6381f79f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        608,
+        192
+      ],
+      "id": "a09ccf0f-7278-40fc-aeaa-4bd203efd4d3",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "resource": "project",
+        "operation": "create",
+        "name": "={{ $json.data.projectName }}",
+        "workspace": "1211485241437921",
+        "team": "1211485241437923",
+        "additionalFields": {
+          "notes": "=Client: {{ $json.data.clientName }}\n  Budget: {{ $json.data.budget }}\n  Duration: {{ $json.data.estimatedDuration }} days\n  Project Manager: {{ $json.data.projectManager }}",
+          "privacy_setting": "private_to_team"
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "762c1944-a7c5-4917-a466-ad4b345334b1",
+      "name": "Create a project",
+      "credentials": {
+        "asanaApi": {
+          "id": "qVFfcYtXu0qL0bi7",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workspace": "1211485241437921",
+        "name": "={{ $json.name }}",
+        "otherProperties": {
+          "assignee": "1211485241437909",
+          "due_on": "={{ $json.due_on }}",
+          "notes": "={{ $json.notes }}",
+          "projects": "={{ $('Create a project').item.json.gid }}"
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        -96
+      ],
+      "id": "9d4d49fb-5f1b-4c17-8a6d-3b7f8ea73093",
+      "name": "Create a task",
+      "credentials": {
+        "asanaApi": {
+          "id": "qVFfcYtXu0qL0bi7",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the webhook body and project details from previous nodes\nconst webhookData = $('Webhook').item.json.body;\nconst projectData = $('Create a project').item.json;\n\n// Extract essential data\nconst phases = webhookData.phases || [];\nconst projectStartDate = new Date(webhookData.startDate);\nconst projectGid = projectData.gid;\nconst projectName = projectData.name;\nconst clientName = webhookData.clientName;\nconst projectManager = webhookData.projectManager;\nconst budget = webhookData.budget;\nconst totalDuration = webhookData.estimatedDuration;\n\n// Calculate budget allocation per day (for phase budget calculation)\nconst budgetPerDay = budget / totalDuration;\n\n// Process each phase and create task data\nlet currentStartDate = new Date(projectStartDate);\nconst phaseTasks = [];\n\nphases.forEach((phase, index) => {\n  // Calculate dates for this phase\n  const phaseStartDate = new Date(currentStartDate);\n  const phaseEndDate = new Date(currentStartDate);\n  phaseEndDate.setDate(phaseEndDate.getDate() + phase.duration - 1);\n  \n  // Calculate phase budget (proportional to duration)\n  const phaseBudget = Math.round(budgetPerDay * phase.duration);\n  \n  // Prepare task data for Asana\n  const taskData = {\n    // Essential Asana fields\n    name: `${phase.name} - ${projectName}`,\n    notes: `📋 **Phase Details**\\n\\n` +\n           `**Description:** ${phase.description}\\n` +\n           `**Client:** ${clientName}\\n` +\n           `**Project Manager:** ${projectManager}\\n` +\n           `**Phase ${index + 1} of ${phases.length}**\\n\\n` +\n           `📅 **Timeline**\\n` +\n           `• Start Date: ${phaseStartDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\\n` +\n           `• End Date: ${phaseEndDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\\n` +\n           `• Duration: ${phase.duration} days\\n\\n` +\n           `💰 **Budget**\\n` +\n           `• Phase Budget: $${phaseBudget.toLocaleString()}\\n` +\n           `• Daily Rate: $${Math.round(phaseBudget/phase.duration).toLocaleString()}\\n\\n` +\n           `📊 **Progress**\\n` +\n           `• Status: Not Started\\n` +\n           `• Completion: 0%\\n\\n` +\n           `---\\n` +\n           `*Created from Construction Project Scheduling Agent*`,\n    \n    // Asana specific fields\n    projects: [projectGid],\n    start_on: phaseStartDate.toISOString().split('T')[0],\n    due_on: phaseEndDate.toISOString().split('T')[0],\n    \n    // Custom fields for your reference (these will be in the task data)\n    custom_fields_data: {\n      phase_name: phase.name,\n      phase_number: index + 1,\n      total_phases: phases.length,\n      duration_days: phase.duration,\n      phase_budget: phaseBudget,\n      project_id: webhookData.projectId,\n      client_name: clientName,\n      original_description: phase.description\n    },\n    \n    // Tags to help with organization (you'll need to create these tags in Asana first)\n    tags: [`Phase-${index + 1}`, projectName.replace(/\\s+/g, '-'), 'Construction'],\n    \n    // Additional metadata\n    metadata: {\n      webhookProjectId: webhookData.projectId,\n      phaseIndex: index,\n      phaseStartDate: phaseStartDate.toISOString(),\n      phaseEndDate: phaseEndDate.toISOString(),\n      phaseDuration: phase.duration,\n      phaseBudget: phaseBudget,\n      projectTotalBudget: budget,\n      projectTotalDuration: totalDuration\n    }\n  };\n  \n  phaseTasks.push(taskData);\n  \n  // Move to next phase start date\n  currentStartDate = new Date(phaseEndDate);\n  currentStartDate.setDate(currentStartDate.getDate() + 1);\n});\n\n// Add a milestone task for project completion\nconst projectEndDate = new Date(currentStartDate);\nprojectEndDate.setDate(projectEndDate.getDate() - 1);\n\nconst milestoneTask = {\n  name: `🎯 PROJECT COMPLETE - ${projectName}`,\n  notes: `✅ **Project Completion Milestone**\\n\\n` +\n         `**Project:** ${projectName}\\n` +\n         `**Client:** ${clientName}\\n` +\n         `**Total Duration:** ${totalDuration} days\\n` +\n         `**Total Budget:** $${budget.toLocaleString()}\\n` +\n         `**Phases Completed:** ${phases.length}\\n\\n` +\n         `📊 **Phase Summary:**\\n` +\n         phases.map((p, i) => `${i+1}. ${p.name} - ${p.duration} days`).join('\\n') +\n         `\\n\\n---\\n*Project managed by: ${projectManager}*`,\n  \n  projects: [projectGid],\n  due_on: projectEndDate.toISOString().split('T')[0],\n  tags: ['Milestone', 'Project-Complete', projectName.replace(/\\s+/g, '-')],\n  \n  metadata: {\n    type: 'milestone',\n    projectId: webhookData.projectId,\n    totalDuration: totalDuration,\n    totalBudget: budget\n  }\n};\n\n// Add the milestone to the tasks array\nphaseTasks.push(milestoneTask);\n\n// Return all tasks for the Create Task node\nreturn phaseTasks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "f62f2111-a611-43b6-9552-8e155c81fe4a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ahmad.imdad007@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ahmad.imdad007@gmail.com"
+        },
+        "start": "={{ $json.start.dateTime }}",
+        "end": "={{ $json.end.dateTime }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $('Webhook').item.json.body.projectManager }}"
+          ],
+          "description": "={{ $('Code in JavaScript1').item.json.notes }}",
+          "summary": "={{ $json.summary }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        -96
+      ],
+      "id": "c9c04cca-6810-4216-8fe0-2d1ab16f6703",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YPVmMOvSB8C8j3zh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the tasks created from Asana\nconst tasks = $input.all();\nconst webhookData = $('Webhook').item.json.body;\n\n// Function to convert date to Google Calendar format\nfunction formatDateForGoogleCalendar(dateString, isEndDate = false) {\n  const date = new Date(dateString);\n  \n  // If it's an end date, set time to end of day (23:59:59)\n  if (isEndDate) {\n    date.setHours(23, 59, 59, 999);\n  } else {\n    // Start date - set to beginning of day (00:00:00)\n    date.setHours(0, 0, 0, 0);\n  }\n  \n  return date.toISOString();\n}\n\n// Function to extract dates from task notes\nfunction extractDatesFromNotes(notes) {\n  // Extract start date\n  const startMatch = notes.match(/Start Date: ([^•\\n]+)/);\n  const endMatch = notes.match(/End Date: ([^•\\n]+)/);\n  \n  if (startMatch && endMatch) {\n    // Parse the date strings (e.g., \"Tuesday, October 15, 2024\")\n    const startDateStr = startMatch[1].trim();\n    const endDateStr = endMatch[1].trim();\n    \n    // Convert to Date objects\n    const startDate = new Date(startDateStr);\n    const endDate = new Date(endDateStr);\n    \n    return {\n      startDate: formatDateForGoogleCalendar(startDate),\n      endDate: formatDateForGoogleCalendar(endDate, true)\n    };\n  }\n  \n  return null;\n}\n\n// Process each task and create Google Calendar event data\nconst calendarEvents = tasks.map((task, index) => {\n  const taskData = task.json;\n  \n  // Extract dates from notes or use due_on date\n  let eventDates = extractDatesFromNotes(taskData.notes);\n  \n  // If we couldn't extract from notes, calculate based on due_on\n  if (!eventDates) {\n    // For milestone task (PROJECT COMPLETE)\n    if (taskData.name.includes('PROJECT COMPLETE')) {\n      const endDate = new Date(taskData.due_on);\n      return {\n        summary: taskData.name,\n        description: taskData.notes,\n        start: {\n          dateTime: formatDateForGoogleCalendar(endDate),\n          timeZone: 'America/New_York' // Adjust to your timezone\n        },\n        end: {\n          dateTime: formatDateForGoogleCalendar(endDate, true),\n          timeZone: 'America/New_York'\n        },\n        colorId: '11', // Red for milestone\n        reminders: {\n          useDefault: false,\n          overrides: [\n            { method: 'email', minutes: 24 * 60 }, // 1 day before\n            { method: 'popup', minutes: 60 } // 1 hour before\n          ]\n        },\n        attendees: [\n          { email: webhookData.projectManager }\n        ]\n      };\n    }\n    \n    // For regular phase tasks, calculate start date based on phase sequence\n    const phaseDurations = [30, 60, 90]; // Foundation, Structure, Finishing\n    let startDate = new Date(webhookData.startDate);\n    \n    // Calculate this phase's start date\n    for (let i = 0; i < index && i < phaseDurations.length; i++) {\n      startDate.setDate(startDate.getDate() + phaseDurations[i]);\n    }\n    \n    const endDate = new Date(taskData.due_on);\n    \n    eventDates = {\n      startDate: formatDateForGoogleCalendar(startDate),\n      endDate: formatDateForGoogleCalendar(endDate, true)\n    };\n  }\n  \n  // Extract additional info from notes\n  const budgetMatch = taskData.notes.match(/Phase Budget: \\$([^•\\n]+)/);\n  const phaseMatch = taskData.notes.match(/Phase (\\d+) of (\\d+)/);\n  \n  // Determine color based on phase\n  let colorId = '10'; // Default green\n  if (phaseMatch) {\n    const phaseNum = parseInt(phaseMatch[1]);\n    colorId = phaseNum === 1 ? '9' : phaseNum === 2 ? '5' : '2'; // Blue, Yellow, Turquoise\n  }\n  \n  // Create the Google Calendar event object\n  return {\n    // Event title\n    summary: taskData.name,\n    \n    // Event description with all details\n    description: `${taskData.notes}\\n\\n🔗 Asana Task: ${taskData.permalink_url}`,\n    \n    // Start time in ISO format\n    start: {\n      dateTime: eventDates.startDate,\n      timeZone: 'America/New_York' // Adjust to your project timezone\n    },\n    \n    // End time in ISO format\n    end: {\n      dateTime: eventDates.endDate,\n      timeZone: 'America/New_York'\n    },\n    \n    // Location (optional)\n    location: `Project Site - ${webhookData.clientName}`,\n    \n    // Event color\n    colorId: colorId,\n    \n    // Attendees\n    attendees: [\n      { email: webhookData.projectManager },\n      // Add crew members if needed\n      ...((webhookData.crewMembers || []).map(member => ({\n        email: `${member.name.toLowerCase().replace(' ', '.')}@company.com`, // You might need actual emails\n        displayName: member.name,\n        optional: true\n      })))\n    ],\n    \n    // Reminders\n    reminders: {\n      useDefault: false,\n      overrides: [\n        { method: 'email', minutes: 7 * 24 * 60 }, // 1 week before\n        { method: 'email', minutes: 24 * 60 }, // 1 day before\n        { method: 'popup', minutes: 60 } // 1 hour before\n      ]\n    },\n    \n    // Extended properties for tracking\n    extendedProperties: {\n      private: {\n        asanaTaskId: taskData.gid,\n        asanaProjectId: taskData.projects[0].gid,\n        projectId: webhookData.projectId,\n        phaseNumber: phaseMatch ? phaseMatch[1] : '0',\n        phaseBudget: budgetMatch ? budgetMatch[1] : '0'\n      }\n    },\n    \n    // Make it an all-day event if you prefer\n    // Remove dateTime and use date instead for all-day events:\n    // start: { date: '2024-10-15' },\n    // end: { date: '2024-11-14' },\n    \n    // Additional metadata\n    metadata: {\n      taskGid: taskData.gid,\n      asanaUrl: taskData.permalink_url,\n      client: webhookData.clientName,\n      projectManager: webhookData.projectManager\n    }\n  };\n});\n\n// Return the formatted calendar events\nreturn calendarEvents;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -96
+      ],
+      "id": "1502ac1d-ccc8-4cbc-a7e5-204a2f6628ac",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Project  -{{ $('Create a project').item.json.name }} Initiated Successfully",
+        "message": "=<h2>Project Setup Complete</h2>    <p><b>Project Name:</b> {{ $('Create a project').item.json.name }}</p>    <p><b>Start Date:</b> {{ $('Create an event').item.json.start.dateTime }}</p>    <p><b>Asana Project ID:</b> {{ $('Create a project').item.json.gid }}</p>    <p><b>Calendar Event:</b> {{ $('Create an event').item.json.htmlLink }}</p>    <h3>Next Steps:</h3>    <ul>    <li>Crew has been notified via SMS</li>    <li>Weekly progress reports will be sent automatically</li>    <li>Access Asana for task details</li>    </ul>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2112,
+        -96
+      ],
+      "id": "248d7c7a-7884-4cfc-8098-9794ac1ab8de",
+      "name": "Send a message",
+      "webhookId": "55fadae1-53dd-4e26-8745-a7cfa4c4ff01",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the incoming item (should be only one item)\nconst inputItem = items[0];\n\n// Extract crew members from the body\nconst crewMembers = $('Webhook').first().json.body.crewMembers;\n\n// Map each crew member to a new output item\nreturn crewMembers.map(member => {\n  return {\n    json: {\n      name: member.name,\n      email: member.email,\n      phone: member.phone,\n      role: member.role\n    },\n    pairedItem: {\n      item: 0  // Pair each output item to the first input item\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        -96
+      ],
+      "id": "9db5183f-43ae-42f1-9e37-d393ff1e8c0f",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === GREEN API CONFIG ===\nconst idInstance = '';\nconst apiTokenInstance = '';\nconst apiBaseUrl = `https://api.green-api.com/waInstance${idInstance}`;\n\n// === GET INPUTS FROM CONNECTED NODES ===\n// Get the project data from \"Create a project\" node\nconst projectData = $items(\"Create a project\");\nconst project = projectData && projectData.length > 0 ? projectData[0].json : null;\n\n// Get crew members from \"Code in JavaScript3\" node (the one that outputs crew members)\nconst crewMembersData = $items(\"Code in JavaScript3\");\nlet crewMembers = [];\n\n// Process crew members data\nif (crewMembersData && crewMembersData.length > 0) {\n  // Check if it's an array of crew members or individual items\n  for (const item of crewMembersData) {\n    const data = item.json;\n    if (data.name && data.email && data.phone && data.role) {\n      crewMembers.push(data);\n    }\n  }\n}\n\n// If no crew members found, try getting from current input\nif (crewMembers.length === 0) {\n  const currentInputs = $input.all();\n  for (const item of currentInputs) {\n    const data = item.json;\n    if (data.name && data.email && data.phone && data.role) {\n      crewMembers.push(data);\n    }\n  }\n}\n\n// Helper function to parse project notes\nfunction parseProjectNotes(notes) {\n  const details = {};\n  \n  // Extract client\n  const clientMatch = notes.match(/Client:\\s*([^\\n]+)/);\n  if (clientMatch) details.client = clientMatch[1].trim();\n  \n  // Extract budget\n  const budgetMatch = notes.match(/Budget:\\s*([^\\n]+)/);\n  if (budgetMatch) details.budget = budgetMatch[1].trim();\n  \n  // Extract duration\n  const durationMatch = notes.match(/Duration:\\s*([^\\n]+)/);\n  if (durationMatch) details.duration = durationMatch[1].trim();\n  \n  // Extract project manager\n  const pmMatch = notes.match(/Project Manager:\\s*([^\\n]+)/);\n  if (pmMatch) details.projectManager = pmMatch[1].trim();\n  \n  return details;\n}\n\n// Helper function to format currency\nfunction formatCurrency(amount) {\n  if (typeof amount === 'string' && amount.match(/^\\d+$/)) {\n    const num = parseInt(amount);\n    return new Intl.NumberFormat('en-US', {\n      style: 'currency',\n      currency: 'USD',\n      minimumFractionDigits: 0,\n      maximumFractionDigits: 0\n    }).format(num);\n  }\n  return '$' + amount;\n}\n\n// Helper function to create comprehensive message\nfunction createProjectMessage(project, member) {\n  const projectDetails = parseProjectNotes(project.notes || '');\n  \n  return `📢 *NEW PROJECT NOTIFICATION*\n\nHello ${member.name},\n\nYou have been assigned to a new construction project. Details below:\n\n🏗️ *PROJECT INFORMATION*\n*Project Name:* ${project.name}\n*Client:* ${projectDetails.client || 'Not specified'}\n*Project Manager:* ${projectDetails.projectManager || 'Not specified'}\n\n💼 *YOUR ROLE*\n*Position:* ${member.role}\n*Contact:* ${member.phone}\n*Email:* ${member.email}\n\n📊 *PROJECT DETAILS*\n*Total Budget:* ${formatCurrency(projectDetails.budget) || 'Not specified'}\n*Total Duration:* ${projectDetails.duration || 'Not specified'}\n*Workspace:* ${project.workspace?.name || 'Not specified'}\n*Team:* ${project.team?.name || 'Not specified'}\n\n👥 *PROJECT TEAM*\n*Owner:* ${project.owner?.name || 'Not specified'}\n*Members:* ${project.members?.map(m => m.name).join(', ') || 'Not specified'}\n\n🔗 *ACCESS LINKS*\n*Asana Project:* ${project.permalink_url}\n\n📅 *IMPORTANT NOTICE*\n✅ An email has been sent to you with Google Calendar events for all project phases\n✅ Please check your email (${member.email}) for calendar invitations\n✅ Accept the calendar invites to add all project milestones to your schedule\n\n⚙️ *PROJECT SETTINGS*\n*Privacy:* ${project.privacy_setting}\n*Access Level:* ${project.default_access_level}\n*Status:* ${project.completed ? 'Completed' : 'Active'}\n\n📝 *NEXT STEPS*\n1. Check your email for Google Calendar invitations\n2. Accept all calendar events for project phases\n3. Review the project timeline in Asana\n4. Coordinate with your project manager\n5. Prepare for your assigned tasks\n\n⏰ *Created:* ${new Date(project.created_at).toLocaleString()}\n\nFor any questions, please contact the project manager at ${projectDetails.projectManager || 'the provided email'}.\n\nThank you for being part of this project!\n\n---\n*This is an automated notification from the Construction Project Management System*`;\n}\n\n// Helper function to send WhatsApp message via Green API\nasync function sendWhatsAppMessage(phone, message) {\n  const url = `${apiBaseUrl}/sendMessage/${apiTokenInstance}`;\n  \n  // Format phone number (remove + and non-numeric characters)\n  const formattedPhone = phone.replace(/\\D/g, '');\n  \n  const body = {\n    chatId: formattedPhone + '@c.us',\n    message: message\n  };\n  \n  try {\n    const response = await this.helpers.httpRequest({\n      method: 'POST',\n      url: url,\n      body: body,\n      headers: {\n        'Content-Type': 'application/json'\n      },\n      json: true\n    });\n    \n    return { success: true, response };\n  } catch (error) {\n    console.error('Error sending message:', error);\n    return { success: false, error: error.message };\n  }\n}\n\n// Main function\nasync function main() {\n  const results = [];\n  \n  // Debug logging\n  console.log('Project data:', project ? 'Found' : 'Not found');\n  console.log('Crew members found:', crewMembers.length);\n  \n  // Validate inputs\n  if (!project) {\n    return [{\n      json: {\n        error: 'No project data found in inputs',\n        message: 'Please ensure the \"Create a project\" node is connected'\n      }\n    }];\n  }\n  \n  if (crewMembers.length === 0) {\n    return [{\n      json: {\n        error: 'No crew members found in inputs',\n        message: 'Please ensure crew members data is connected'\n      }\n    }];\n  }\n  \n  console.log(`Sending project notifications to ${crewMembers.length} crew members`);\n  console.log('Project:', project.name);\n  console.log('Crew members:', crewMembers.map(m => m.name).join(', '));\n  \n  // Send notification to each crew member and create output\n  for (const member of crewMembers) {\n    try {\n      const message = createProjectMessage(project, member);\n      const sendResult = await sendWhatsAppMessage.call(this, member.phone, message);\n      \n      // Create output item with crew member info and status\n      // Ensure no undefined values\n      results.push({\n        json: {\n          name: member.name || '',\n          email: member.email || '',\n          phone: member.phone || '',\n          role: member.role || '',\n          messageSent: sendResult.success ? 'Yes' : 'No',\n          status: sendResult.success ? 'Successfully sent' : 'Failed to send',\n          messageId: sendResult.success ? (sendResult.response?.idMessage || 'Sent') : '',\n          error: sendResult.success ? '' : (sendResult.error || 'Unknown error')\n        }\n      });\n      \n      // Add delay to avoid rate limiting\n      await new Promise(resolve => setTimeout(resolve, 500));\n      \n    } catch (error) {\n      // If error occurs, still output the crew member with error status\n      // Ensure no undefined values\n      results.push({\n        json: {\n          name: member.name || '',\n          email: member.email || '',\n          phone: member.phone || '',\n          role: member.role || '',\n          messageSent: 'No',\n          status: 'Error occurred',\n          messageId: '',\n          error: error.message || 'Unknown error'\n        }\n      });\n    }\n  }\n  \n  return results;\n}\n\n// Execute\nreturn await main.call(this);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        -96
+      ],
+      "id": "71360540-c485-415c-a80a-7326354c4846",
+      "name": "SMS Sending"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "112ohRpfeYyMEiK5YF4aQn64dHl-rduFpJLwtbR77YsA",
+          "mode": "list",
+          "cachedResultName": "Project Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/112ohRpfeYyMEiK5YF4aQn64dHl-rduFpJLwtbR77YsA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1536757028,
+          "mode": "list",
+          "cachedResultName": "Project id's",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/112ohRpfeYyMEiK5YF4aQn64dHl-rduFpJLwtbR77YsA/edit#gid=1536757028"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": "={{ $('Create a project').item.json.gid }}",
+            "members": "={{ $('Webhook').item.json.body.crewMembers }}"
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "members",
+              "displayName": "members",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2528,
+        -96
+      ],
+      "id": "f006e66a-0c1a-4096-995b-aa5924ad092a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        -96
+      ],
+      "id": "da98e22f-7e40-4249-b744-8b48eead6045",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "ahmadimdad007.app.n8n.cloud",
+            "user-agent": "curl/8.7.1",
+            "content-length": "761",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+          "authorization": "",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2407:d000:403:b349:29b6:e66d:38:ee1a",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "PK",
+            "cf-ray": "985b1e9a101640d0-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2407:d000:403:b349:29b6:e66d:38:ee1a, 162.158.106.227",
+            "x-forwarded-host": "ahmadimdad007.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-60-78f959c455-qlrwh",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2407:d000:403:b349:29b6:e66d:38:ee1a"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "projectId": "PROJ-2024-001",
+            "projectName": "Downtown Office Building",
+            "clientName": "ABC Construction",
+            "startDate": "2024-10-15",
+            "estimatedDuration": 180,
+            "budget": 500000,
+            "projectManager": "john.smith@company.com",
+            "crewMembers": [
+              {
+                "name": "Mike Johnson",
+                "phone": "+923066008613",
+                "role": "Site Supervisor",
+                "email": "ahmad.imdad007@gmail.com"
+              },
+              {
+                "name": "Sarah Wilson",
+                "phone": "+923187085897",
+                "role": "Lead Electrician",
+                "email": "maiuyfl@gmail.com"
+              }
+            ],
+            "phases": [
+              {
+                "name": "Foundation",
+                "duration": 30,
+                "description": "Foundation and groundwork"
+              },
+              {
+                "name": "Structure",
+                "duration": 60,
+                "description": "Main structure construction"
+              },
+              {
+                "name": "Finishing",
+                "duration": 90,
+                "description": "Interior finishing and final touches"
+              }
+            ]
+          },
+          "webhookUrl": "https://ahmadimdad007.app.n8n.cloud/webhook-test/construction-project-start",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "SMS Sending": [
+      {
+        "json": {
+          "name": "Mike Johnson",
+          "email": "ahmad.imdad007@gmail.com",
+          "phone": "+923066008613",
+          "role": "Site Supervisor",
+          "messageSent": "No",
+          "status": "Failed to send",
+          "messageId": "",
+          "error": "Request failed with status code 403"
+        }
+      },
+      {
+        "json": {
+          "name": "Sarah Wilson",
+          "email": "maiuyfl@gmail.com",
+          "phone": "+923187085897",
+          "role": "Lead Electrician",
+          "messageSent": "No",
+          "status": "Failed to send",
+          "messageId": "",
+          "error": "Request failed with status code 403"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a project",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a project": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "SMS Sending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMS Sending": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e756f7fb-647e-4756-a8a2-edd0b00a887c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "o6pRYbB458rUjlOJ",
+  "tags": []
+}

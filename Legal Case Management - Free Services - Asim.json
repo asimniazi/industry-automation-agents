@@ -1,0 +1,890 @@
+{
+  "name": "Legal Case Management - Free Services - Asim",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "case-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ca87347b-09c6-47d8-aead-994f1a94e8cb",
+      "name": "Case Intake Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        -304
+      ],
+      "webhookId": "legal-case-intake"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "clientName",
+              "value": "={{ $json.body.clientName }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "phone",
+              "value": "={{ $json.body.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "location",
+              "value": "={{ $json.body.location }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "caseType",
+              "value": "={{ $json.body.caseType }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "urgency",
+              "value": "={{ $json.body.urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "description",
+              "value": "={{ $json.body.description }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "consultationPreference",
+              "value": "={{ $json.body.consultationPreference }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "bestCallTime",
+              "value": "={{ $json.body.bestCallTime }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "caseId",
+              "value": "=CASE-{{ Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "intakeDate",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "12",
+              "name": "status",
+              "value": "New Intake",
+              "type": "string"
+            },
+            {
+              "id": "13",
+              "name": "deadline",
+              "value": "={{ $json.body.urgency === 'Urgent (Within 48 hours)' ? new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0] : $json.body.urgency === 'This Week' ? new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0] : new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "491f2c79-9bbc-43b5-a8d6-a0a9a3f95662",
+      "name": "Edit Fields Before Sheet",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -832,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y",
+          "mode": "list",
+          "cachedResultName": "Cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "clientName",
+              "displayName": "clientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caseType",
+              "displayName": "caseType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "consultationPreference",
+              "displayName": "consultationPreference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bestCallTime",
+              "displayName": "bestCallTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caseId",
+              "displayName": "caseId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intakeDate",
+              "displayName": "intakeDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "deadline",
+              "displayName": "deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bde4f02e-7480-4473-8d30-729535dcc375",
+      "name": "Add Case to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -624,
+        -304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ahmad.imdad007@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ahmad.imdad007@gmail.com"
+        },
+        "start": "={{ $('Edit Fields Before Sheet').item.json.bestCallTime === 'Morning (9 AM - 12 PM)' ? new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T09:00:00' : $('Edit Fields Before Sheet').item.json.bestCallTime === 'Afternoon (12 PM - 5 PM)' ? new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T14:00:00' : new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T17:00:00' }}",
+        "end": "={{ $('Edit Fields Before Sheet').item.json.bestCallTime === 'Morning (9 AM - 12 PM)' ? new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T10:00:00' : $('Edit Fields Before Sheet').item.json.bestCallTime === 'Afternoon (12 PM - 5 PM)' ? new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T15:00:00' : new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] + 'T18:00:00' }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $json.email }}"
+          ],
+          "description": "=Case Type: {{ $('Edit Fields Before Sheet').item.json.caseType }}\nUrgency: {{ $('Edit Fields Before Sheet').item.json.urgency }}\nPhone: {{ $('Edit Fields Before Sheet').item.json.phone }}\nEmail: {{ $('Edit Fields Before Sheet').item.json.email }}\nDescription: {{ $('Edit Fields Before Sheet').item.json.description }}",
+          "location": "={{ $('Edit Fields Before Sheet').item.json.location }}",
+          "sendUpdates": "all",
+          "summary": "={{ $json.caseType }}"
+        }
+      },
+      "id": "a9b8147e-5231-473a-8cc7-eefc83e61b43",
+      "name": "Schedule Consultation",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        -304
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YPVmMOvSB8C8j3zh",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.docuseal.co/submissions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Auth-Token",
+              "value": ""
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template_id\": 1887458,\n  \"send_email\": true,\n  \"submitters\": [\n    {\n      \"role\": \"First Party\",\n      \"email\": \"{{ $('Edit Fields Before Sheet').item.json.email }}\",\n      \"name\": \"{{ $('Edit Fields Before Sheet').item.json.clientName }}\",\n      \"fields\": [\n        {\n          \"name\": \"policy_number\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.caseId }}\"\n        },\n        {\n          \"name\": \"type\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.caseType }}\"\n        },\n        {\n          \"name\": \"policy_holder\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.clientName }}\"\n        },\n        {\n          \"name\": \"renewal_date\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.deadline }}\"\n        },\n        {\n          \"name\": \"deductible\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.urgency }}\"\n        },\n        {\n          \"name\": \"coverage_amount\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.description }}\"\n        },\n        {\n          \"name\": \"new_renewal_premium\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.consultationPreference }}\"\n        },\n        {\n          \"name\": \"current_premium\",\n          \"default_value\": \"{{ $('Edit Fields Before Sheet').item.json.bestCallTime }}\"\n        }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "id": "1b4b23b0-43e4-4987-997a-a9bd2432025a",
+      "name": "Send Retainer Agreement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -224,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "28431f51-87dd-80b6-a138-e3235ad2d38d",
+          "mode": "list",
+          "cachedResultName": "28431f51-87dd-80b6-a138-e3235ad2d38d",
+          "cachedResultUrl": "https://www.notion.so/28431f5187dd80b6a138e3235ad2d38d"
+        },
+        "title": "Cases",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Id|title",
+              "title": "={{ $('Edit Fields Before Sheet').item.json.caseId }}"
+            },
+            {
+              "key": "Email|rich_text",
+              "textContent": "={{ $('Edit Fields Before Sheet').item.json.email }}"
+            },
+            {
+              "key": "Name|rich_text",
+              "textContent": "={{ $('Edit Fields Before Sheet').item.json.clientName }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{ $('Edit Fields Before Sheet').item.json.description }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c08a04f1-5d34-4cd0-a3ad-eff674a170e2",
+      "name": "Create Case Tasks in Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        -304
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "JXuGyBrYMsniaU7U",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=maiuyfllll@gmail.com",
+        "subject": "=Case Intake Confirmation - {{ $('Edit Fields Before Sheet').item.json.caseId }}",
+        "message": "=<h2>Thank you for contacting our legal services</h2>\n<p>Dear {{ $('Edit Fields Before Sheet').item.json.clientName }},</p>\n<p>We have received your case intake for: <strong>{{ $('Edit Fields Before Sheet').item.json.caseType }}</strong></p>\n<p><strong>Your Case ID:</strong> {{ $('Edit Fields Before Sheet').item.json.caseId }}</p>\n<p><strong>Next Steps:</strong></p>\n<ul>\n<li>A consultation has been scheduled based on your preference</li>\n<li>You will receive a retainer agreement via DocuSeal</li>\n<li>We will contact you within 24 hours</li>\n</ul>\n<p><strong>Case Details:</strong></p>\n<ul>\n<li>Urgency: {{ $('Edit Fields Before Sheet').item.json.urgency }}</li>\n<li>Consultation Preference: {{ $('Edit Fields Before Sheet').item.json.consultationPreference }}</li>\n<li>Best Call Time: {{ $('Edit Fields Before Sheet').item.json.bestCallTime }}</li>\n</ul>\n<p>Best regards,<br>Legal Services Team</p>",
+        "options": {}
+      },
+      "id": "f130849c-d63a-4a45-ab75-dc4d0c565921",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        -304
+      ],
+      "webhookId": "8bbc921c-500e-42d9-aad0-6560a2695d0d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Deadline Monitoring Branch",
+        "height": 80,
+        "width": 250
+      },
+      "id": "79a2eb1c-a4ab-4255-ad25-178b995b065e",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "c9ca5ce9-1da6-4d8d-8df3-ca9edc0dbb7d",
+      "name": "Daily Deadline Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1024,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y",
+          "mode": "list",
+          "cachedResultName": "Cases",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z4Frb_g0kjd7V-TOB8h5NsApxqbqZbcTcINEzTbOW8Y/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "aa2950a0-a4b5-480f-9caa-8cb8c2e5210a",
+      "name": "Read All Cases",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -832,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uqDRuRBPXhQaPxkb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.deadline }}",
+              "rightValue": "={{ new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0] }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              }
+            },
+            {
+              "id": "2",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "Completed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c7a76c4b-2121-4d80-b619-00b4d96ad397",
+      "name": "Filter Upcoming Deadlines",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -624,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=legal-team@example.com",
+        "subject": "=⚠️ DEADLINE ALERT: {{ $json.clientName }} - {{ $json.caseType }}",
+        "message": "=<h2>Upcoming Case Deadline</h2>\n<p><strong>Client:</strong> {{ $json.clientName }}</p>\n<p><strong>Case ID:</strong> {{ $json.caseId }}</p>\n<p><strong>Case Type:</strong> {{ $json.caseType }}</p>\n<p><strong>Deadline:</strong> {{ $json.deadline }}</p>\n<p><strong>Days Remaining:</strong> {{ Math.ceil((new Date($json.deadline) - new Date()) / (1000 * 60 * 60 * 24)) }} days</p>\n<p><strong>Status:</strong> {{ $json.status }}</p>\n<p><strong>Description:</strong> {{ $json.description }}</p>\n<p>Please take immediate action on this case.</p>",
+        "options": {}
+      },
+      "id": "48403c7d-270f-4f39-a19f-63c13d7bc655",
+      "name": "Send Deadline Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        112
+      ],
+      "webhookId": "25834bff-e0c6-4793-8414-7a23ee4e58dd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qYt2LWCbLPbNK8xy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        -304
+      ],
+      "id": "e228433d-61a8-4da2-93dc-0a0804d64e1b",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Case Intake Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "localhost:5678",
+            "content-type": "application/json",
+            "user-agent": "curl/7.68.0",
+            "accept": "*/*",
+            "content-length": "367"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "clientName": "John Smith",
+            "email": "john.smith@email.com",
+            "phone": "+1-555-123-4567",
+            "location": "New York, NY",
+            "caseType": "Personal Injury",
+            "urgency": "This Week",
+            "description": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+            "consultationPreference": "Video Call",
+            "bestCallTime": "Afternoon (12 PM - 5 PM)"
+          }
+        }
+      }
+    ],
+    "Create Case Tasks in Notion": [
+      {
+        "json": {
+          "id": "28431f51-87dd-815f-8842-e539b68e9e15",
+          "name": "CASE-1759756302893",
+          "url": "https://www.notion.so/CASE-1759756302893-28431f5187dd815f8842e539b68e9e15",
+          "property_name": "John Smith",
+          "property_email": "john.smith@email.com",
+          "property_summary": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+          "property_id": "CASE-1759756302893"
+        }
+      }
+    ],
+    "Send Confirmation Email": [
+      {
+        "json": {
+          "id": "199b9a8f4a6bb87f",
+          "threadId": "199b9a8f4a6bb87f",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      }
+    ],
+    "Respond to Webhook": [
+      {
+        "json": {
+          "id": "199b9a8f4a6bb87f",
+          "threadId": "199b9a8f4a6bb87f",
+          "labelIds": [
+            "SENT"
+          ]
+        }
+      }
+    ],
+    "Read All Cases": [
+      {
+        "json": {
+          "row_number": 2,
+          "clientName": "John Smith",
+          "email": "john.smith@email.com",
+          "phone": -5244,
+          "location": "New York, NY",
+          "caseType": "Personal Injury",
+          "urgency": "This Week",
+          "description": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+          "consultationPreference": "Video Call",
+          "bestCallTime": "Afternoon (12 PM - 5 PM)",
+          "caseId": "CASE-1728200000000",
+          "intakeDate": "2025-10-06T12:00:00Z",
+          "status": "New Intake",
+          "deadline": "2025-10-13"
+        }
+      },
+      {
+        "json": {
+          "row_number": 3,
+          "clientName": "Maria Lopez",
+          "email": "maria.lopez@email.com",
+          "phone": -5640,
+          "location": "Los Angeles, CA",
+          "caseType": "Family Law",
+          "urgency": "Urgent (Within 48 hours)",
+          "description": "Need urgent restraining order due to domestic issue",
+          "consultationPreference": "In Person",
+          "bestCallTime": "Morning (9 AM - 12 PM)",
+          "caseId": "CASE-1728200000001",
+          "intakeDate": "2025-10-06T12:00:00Z",
+          "status": "New Intake",
+          "deadline": "2025-10-08"
+        }
+      },
+      {
+        "json": {
+          "row_number": 4,
+          "clientName": "Ahmed Khan",
+          "email": "ahmed.khan@email.com",
+          "phone": -1234775,
+          "location": "Karachi, Pakistan",
+          "caseType": "Contract Dispute",
+          "urgency": "This Month",
+          "description": "Dispute with vendor over breach of contract terms",
+          "consultationPreference": "Phone Call",
+          "bestCallTime": "Evening (5 PM - 8 PM)",
+          "caseId": "CASE-1728200000002",
+          "intakeDate": "2025-10-06T12:00:00Z",
+          "status": "New Intake",
+          "deadline": "2025-11-06"
+        }
+      },
+      {
+        "json": {
+          "row_number": 5,
+          "clientName": "Emily Davis",
+          "email": "emily.davis@email.com",
+          "phone": -907779,
+          "location": "London, UK",
+          "caseType": "Employment Law",
+          "urgency": "This Week",
+          "description": "Wrongful termination, seeking compensation",
+          "consultationPreference": "Video Call",
+          "bestCallTime": "Afternoon (12 PM - 5 PM)",
+          "caseId": "CASE-1728200000003",
+          "intakeDate": "2025-10-06T12:00:00Z",
+          "status": "New Intake",
+          "deadline": "2025-10-13"
+        }
+      },
+      {
+        "json": {
+          "row_number": 6,
+          "clientName": "Carlos Mendez",
+          "email": "carlos.mendez@email.com",
+          "phone": -124022,
+          "location": "Madrid, Spain",
+          "caseType": "Immigration Law",
+          "urgency": "Urgent (Within 48 hours)",
+          "description": "Need urgent legal help with visa rejection",
+          "consultationPreference": "In Person",
+          "bestCallTime": "Morning (9 AM - 12 PM)",
+          "caseId": "CASE-1728200000004",
+          "intakeDate": "2025-10-06T12:00:00Z",
+          "status": "New Intake",
+          "deadline": "2025-10-08"
+        }
+      },
+      {
+        "json": {
+          "row_number": 7,
+          "clientName": "John Smith",
+          "email": "john.smith@email.com",
+          "phone": -5244,
+          "location": "New York, NY",
+          "caseType": "Personal Injury",
+          "urgency": "This Week",
+          "description": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+          "consultationPreference": "Video Call",
+          "bestCallTime": "Afternoon (12 PM - 5 PM)",
+          "caseId": "CASE-1759751788321",
+          "intakeDate": "2025-10-06T11:56:28.321Z",
+          "status": "New Intake",
+          "deadline": "2025-10-13"
+        }
+      },
+      {
+        "json": {
+          "row_number": 8,
+          "clientName": "John Smith",
+          "email": "john.smith@email.com",
+          "phone": -5244,
+          "location": "New York, NY",
+          "caseType": "Personal Injury",
+          "urgency": "This Week",
+          "description": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+          "consultationPreference": "Video Call",
+          "bestCallTime": "Afternoon (12 PM - 5 PM)",
+          "caseId": "CASE-1759751788321",
+          "intakeDate": "2025-10-06T11:56:28.321Z",
+          "status": "New Intake",
+          "deadline": "2025-10-13"
+        }
+      },
+      {
+        "json": {
+          "row_number": 9,
+          "clientName": "John Smith",
+          "email": "john.smith@email.com",
+          "phone": -5244,
+          "location": "New York, NY",
+          "caseType": "Personal Injury",
+          "urgency": "This Week",
+          "description": "Car accident on highway, need legal representation for insurance claim and medical expenses",
+          "consultationPreference": "Video Call",
+          "bestCallTime": "Afternoon (12 PM - 5 PM)",
+          "caseId": "CASE-1759756302893",
+          "intakeDate": "2025-10-06T13:11:42.894Z",
+          "status": "New Intake",
+          "deadline": "2025-10-13"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Case Intake Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Before Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Before Sheet": {
+      "main": [
+        [
+          {
+            "node": "Add Case to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Case to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Schedule Consultation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Consultation": {
+      "main": [
+        [
+          {
+            "node": "Send Retainer Agreement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Retainer Agreement": {
+      "main": [
+        [
+          {
+            "node": "Create Case Tasks in Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Case Tasks in Notion": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Deadline Check": {
+      "main": [
+        [
+          {
+            "node": "Read All Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Cases": {
+      "main": [
+        [
+          {
+            "node": "Filter Upcoming Deadlines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Upcoming Deadlines": {
+      "main": [
+        [
+          {
+            "node": "Send Deadline Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "44bc9ecf-6a60-4094-9999-18e867b26dd8",
+  "meta": {
+    "instanceId": "e76781effe17f1b357b0ae2f35c7c1f8ca958ced2961251e30cfe8b1879faddf"
+  },
+  "id": "7GRrPx1RszyQuL0W",
+  "tags": []
+}
